@@ -1,0 +1,2155 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>DentFlow — Clinic Finance</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700;800&family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  /* ===== LUXURY DESIGN SYSTEM ===== */
+  :root {
+    --bg: #07090f;
+    --bg-grad: radial-gradient(140% 100% at 50% 0%, #14182a 0%, #0a0c14 45%, #07090f 100%);
+    --surface: rgba(22, 26, 40, 0.72);
+    --surface-solid: #14182428;
+    --surface2: rgba(34, 40, 60, 0.55);
+    --border: rgba(214, 188, 122, 0.14);
+    --border-soft: rgba(255,255,255,0.06);
+    --accent: #d4af6a;           /* champagne gold */
+    --accent-bright: #f0d49a;
+    --accent2: #8b7cf0;          /* refined violet */
+    --accent3: #ff7a85;          /* rose */
+    --accent4: #5fe0c0;          /* emerald mint */
+    --gold-grad: linear-gradient(135deg, #f0d49a 0%, #d4af6a 45%, #b8923f 100%);
+    --text: #f4f2ea;
+    --muted: #8b8f9e;
+    --card-shadow: 0 8px 40px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.04);
+    --radius: 24px;
+    --radius-sm: 16px;
+    --nav-h: 78px;
+  }
+  .light {
+    --bg: #f5f3ec;
+    --bg-grad: radial-gradient(140% 100% at 50% 0%, #ffffff 0%, #f3efe4 55%, #ece6d6 100%);
+    --surface: rgba(255,255,255,0.82);
+    --surface-solid: #ffffff;
+    --surface2: rgba(245,241,232,0.85);
+    --border: rgba(184, 146, 63, 0.22);
+    --border-soft: rgba(0,0,0,0.06);
+    --text: #1c1a14;
+    --muted: #7a7568;
+    --card-shadow: 0 8px 32px rgba(120,100,50,0.10), inset 0 1px 0 rgba(255,255,255,0.6);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; overflow: hidden; }
+  body {
+    font-family: 'Sarabun', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    transition: background 0.4s, color 0.4s;
+    -webkit-font-smoothing: antialiased;
+  }
+  #app {
+    height: 100dvh; display: flex; flex-direction: column;
+    background: var(--bg-grad);
+    position: relative;
+  }
+  /* ambient gold glow at top */
+  #app::before {
+    content:''; position:absolute; top:-120px; left:50%; transform:translateX(-50%);
+    width:340px; height:340px; border-radius:50%;
+    background: radial-gradient(circle, rgba(212,175,106,0.18) 0%, transparent 70%);
+    pointer-events:none; z-index:0;
+  }
+
+  .topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 18px 20px 14px;
+    background: transparent;
+    flex-shrink: 0; z-index: 10; position: relative;
+  }
+  .topbar-title {
+    font-family: 'Prompt', sans-serif; font-size: 24px; font-weight: 700;
+    letter-spacing: -0.5px; color: var(--text);
+  }
+  .topbar-title span {
+    background: var(--gold-grad); -webkit-background-clip: text;
+    background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .topbar-actions { display: flex; gap: 9px; align-items: center; }
+  .icon-btn {
+    width: 40px; height: 40px; border-radius: 14px; border: 1px solid var(--border);
+    background: var(--surface); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; cursor: pointer; transition: all 0.25s cubic-bezier(.2,.8,.2,1);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.05);
+  }
+  .icon-btn:active { transform: scale(0.9); }
+
+  /* SCROLL AREA */
+  .pages { flex: 1; overflow: hidden; position: relative; z-index: 1; }
+  .page {
+    position: absolute; inset: 0; overflow-y: auto; padding: 12px 16px calc(var(--nav-h) + 20px);
+    opacity: 0; pointer-events: none; transform: translateY(10px) scale(0.995);
+    transition: opacity 0.35s ease, transform 0.35s cubic-bezier(.2,.8,.2,1);
+  }
+  .page.active { opacity: 1; pointer-events: all; transform: none; }
+
+  /* BOTTOM NAV - floating glass dock */
+  .bottom-nav {
+    display: flex; height: var(--nav-h); flex-shrink: 0; position: relative; z-index: 20;
+    background: var(--surface); backdrop-filter: blur(28px) saturate(180%);
+    -webkit-backdrop-filter: blur(28px) saturate(180%);
+    border-top: 1px solid var(--border);
+    box-shadow: 0 -8px 32px rgba(0,0,0,0.35);
+  }
+  .nav-item {
+    flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 4px; cursor: pointer; transition: all 0.25s; position: relative;
+  }
+  .nav-item .nav-icon { font-size: 21px; transition: transform 0.3s cubic-bezier(.2,.8,.2,1); filter: grayscale(0.3) opacity(0.65); }
+  .nav-item .nav-label { font-size: 10px; font-weight: 600; color: var(--muted); transition: color 0.25s; letter-spacing: 0.2px; }
+  .nav-item.active .nav-label {
+    background: var(--gold-grad); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .nav-item.active .nav-icon { transform: translateY(-3px) scale(1.08); filter: none; }
+  .nav-item::after {
+    content: ''; position: absolute; top: 8px; left: 50%; transform: translateX(-50%);
+    width: 0; height: 3px; background: var(--gold-grad); border-radius: 3px; transition: width 0.3s;
+    box-shadow: 0 0 12px rgba(212,175,106,0.6);
+  }
+  .nav-item.active::after { width: 22px; }
+  .nav-add {
+    background: var(--gold-grad); border-radius: 20px; width: 52px; height: 52px; margin-top: -10px;
+    box-shadow: 0 8px 24px rgba(212,175,106,0.45), inset 0 1px 0 rgba(255,255,255,0.5);
+  }
+  .nav-add .nav-icon { font-size: 24px; filter: none; }
+  .nav-add .nav-label { color: #2a210f !important; font-weight: 800; font-size: 9px; -webkit-text-fill-color: #2a210f !important; }
+  .nav-add::after { display: none; }
+  .nav-add:active { transform: scale(0.92); }
+
+  /* CARDS - glassmorphic */
+  .card {
+    background: var(--surface); border-radius: var(--radius);
+    border: 1px solid var(--border-soft); padding: 20px;
+    box-shadow: var(--card-shadow); margin-bottom: 14px;
+    backdrop-filter: blur(20px) saturate(160%); -webkit-backdrop-filter: blur(20px) saturate(160%);
+    animation: fadeUp 0.5s cubic-bezier(.2,.8,.2,1) both; position: relative; overflow: hidden;
+  }
+  .card-sm { padding: 16px; border-radius: var(--radius-sm); }
+  @keyframes fadeUp { from { opacity:0; transform:translateY(18px); } to { opacity:1; transform:none; } }
+  .card:nth-child(1) { animation-delay: 0ms; }
+  .card:nth-child(2) { animation-delay: 70ms; }
+  .card:nth-child(3) { animation-delay: 140ms; }
+  .card:nth-child(4) { animation-delay: 210ms; }
+  .card:nth-child(5) { animation-delay: 280ms; }
+
+  .section-title {
+    font-family: 'Prompt', sans-serif; font-size: 11px; font-weight: 600;
+    color: var(--muted); text-transform: uppercase; letter-spacing: 2px;
+    margin-bottom: 12px; margin-top: 2px;
+  }
+
+  /* METRIC CARDS */
+  .metric-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px; }
+  .metric-card {
+    background: var(--surface); border-radius: var(--radius-sm);
+    border: 1px solid var(--border-soft); padding: 16px 16px 14px;
+    position: relative; overflow: hidden;
+    backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
+    box-shadow: var(--card-shadow);
+    animation: fadeUp 0.5s cubic-bezier(.2,.8,.2,1) both;
+    transition: transform 0.25s cubic-bezier(.2,.8,.2,1);
+  }
+  .metric-card:active { transform: scale(0.98); }
+  .metric-card .glow {
+    position: absolute; top: -30px; right: -30px; width: 100px; height: 100px;
+    border-radius: 50%; opacity: 0.22; filter: blur(28px);
+  }
+  .metric-label { font-size: 11px; color: var(--muted); font-weight: 500; margin-bottom: 8px; letter-spacing: 0.3px; }
+  .metric-value { font-family: 'Prompt', sans-serif; font-size: 24px; font-weight: 600; line-height: 1.1; letter-spacing: -0.5px; }
+  .metric-value.large { font-size: 30px; }
+  .metric-sub { font-size: 11px; margin-top: 7px; font-weight: 600; }
+  .up { color: var(--accent4); }
+  .down { color: var(--accent3); }
+  .neutral { color: var(--muted); }
+
+  /* HERO PROFIT - obsidian + gold */
+  .profit-hero {
+    background:
+      radial-gradient(120% 120% at 100% 0%, rgba(212,175,106,0.22) 0%, transparent 55%),
+      linear-gradient(135deg, #1a1d2e 0%, #11131f 100%);
+    border-radius: var(--radius); padding: 26px 24px; margin-bottom: 14px;
+    position: relative; overflow: hidden;
+    border: 1px solid var(--border);
+    box-shadow: 0 16px 50px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.06);
+    animation: fadeUp 0.5s cubic-bezier(.2,.8,.2,1) both;
+  }
+  .profit-hero::before {
+    content: ''; position: absolute; top: -60px; right: -40px;
+    width: 200px; height: 200px;
+    background: radial-gradient(circle, rgba(212,175,106,0.18) 0%, transparent 70%);
+    border-radius: 50%; pointer-events: none;
+  }
+  .profit-hero::after {
+    content:''; position:absolute; inset:0; border-radius: var(--radius);
+    background: linear-gradient(90deg, transparent, rgba(240,212,154,0.04), transparent);
+    pointer-events:none;
+  }
+  .profit-hero .label { font-size: 12px; color: rgba(244,242,234,0.55); font-weight: 500; letter-spacing: 1px; text-transform: uppercase; position: relative; }
+  .profit-hero .amount {
+    font-family: 'Prompt', sans-serif; font-size: 44px; font-weight: 700; line-height: 1.1;
+    margin-top: 4px; letter-spacing: -1px; position: relative;
+    background: linear-gradient(135deg, #fdfaf3 0%, #f0d49a 100%);
+    -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .profit-hero .compare { font-size: 13px; color: rgba(244,242,234,0.7); margin-top: 8px; font-weight: 500; position: relative; }
+  .light .profit-hero {
+    background:
+      radial-gradient(120% 120% at 100% 0%, rgba(212,175,106,0.3) 0%, transparent 55%),
+      linear-gradient(135deg, #2a2d3e 0%, #1a1c28 100%);
+  }
+
+  /* INSIGHT CHIPS */
+  .insight-strip { display: flex; gap: 9px; overflow-x: auto; padding-bottom: 4px; margin-bottom: 14px; }
+  .insight-strip::-webkit-scrollbar { display: none; }
+  .insight-chip {
+    flex-shrink: 0; background: var(--surface); border: 1px solid var(--border);
+    border-radius: 100px; padding: 9px 16px; font-size: 12px; font-weight: 500;
+    white-space: nowrap; display: flex; align-items: center; gap: 6px;
+    backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
+  }
+
+  /* CHART CONTAINER */
+  .chart-wrap { position: relative; height: 190px; }
+  .chart-mini { height: 130px; }
+
+  /* TABS */
+  .tabs { display: flex; gap: 7px; margin-bottom: 16px; overflow-x: auto; }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tab {
+    flex-shrink: 0; padding: 9px 18px; border-radius: 100px; font-size: 13px; font-weight: 600;
+    border: 1px solid var(--border-soft); background: var(--surface2); color: var(--muted);
+    cursor: pointer; transition: all 0.25s cubic-bezier(.2,.8,.2,1);
+  }
+  .tab.active {
+    background: var(--gold-grad); color: #2a210f; border-color: transparent;
+    box-shadow: 0 4px 16px rgba(212,175,106,0.35);
+  }
+
+  /* FORM */
+  .form-group { margin-bottom: 16px; }
+  .form-label { font-size: 11px; font-weight: 600; color: var(--muted); margin-bottom: 8px; display: block; text-transform: uppercase; letter-spacing: 1px; }
+  .form-input, .form-select {
+    width: 100%; padding: 15px 16px; border-radius: var(--radius-sm);
+    background: var(--surface2); border: 1.5px solid var(--border-soft);
+    color: var(--text); font-size: 16px; font-family: 'Sarabun', sans-serif;
+    outline: none; appearance: none; -webkit-appearance: none;
+    transition: border-color 0.25s, box-shadow 0.25s;
+  }
+  .form-input:focus, .form-select:focus {
+    border-color: var(--accent); box-shadow: 0 0 0 3px rgba(212,175,106,0.12);
+  }
+  .form-select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%23d4af6a' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14L2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; padding-right: 40px; }
+  .btn-primary {
+    width: 100%; padding: 17px; border-radius: var(--radius-sm); border: none;
+    background: var(--gold-grad); color: #2a210f; font-size: 16px; font-weight: 700;
+    font-family: 'Prompt', sans-serif; cursor: pointer; transition: all 0.25s cubic-bezier(.2,.8,.2,1);
+    letter-spacing: 0.3px; box-shadow: 0 8px 24px rgba(212,175,106,0.35), inset 0 1px 0 rgba(255,255,255,0.4);
+  }
+  .btn-primary:active { transform: scale(0.97); }
+  .btn-secondary {
+    width: 100%; padding: 15px; border-radius: var(--radius-sm);
+    border: 1.5px solid var(--border); background: var(--surface);
+    color: var(--text); font-size: 15px; font-weight: 600; cursor: pointer;
+    font-family: 'Sarabun', sans-serif; transition: all 0.25s; margin-top: 10px;
+    backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  }
+  .btn-secondary:active { transform: scale(0.98); }
+
+  /* DOCTOR CARDS */
+  .doctor-card {
+    background: var(--surface); border-radius: var(--radius-sm);
+    border: 1px solid var(--border-soft); padding: 18px; margin-bottom: 12px;
+    backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
+    box-shadow: var(--card-shadow);
+  }
+  .doctor-header { display: flex; align-items: center; gap: 13px; margin-bottom: 14px; }
+  .doctor-avatar {
+    width: 48px; height: 48px; border-radius: 16px; display: flex; align-items: center;
+    justify-content: center; font-family: 'Prompt', sans-serif; font-size: 16px; font-weight: 700; color: #14130c;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.3);
+  }
+  .doctor-name { font-family: 'Prompt', sans-serif; font-size: 16px; font-weight: 600; }
+  .doctor-role { font-size: 11px; color: var(--muted); margin-top: 2px; letter-spacing: 0.5px; }
+  .doctor-stats { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+  .d-stat { text-align: center; padding: 10px 4px; background: var(--surface2); border-radius: 12px; }
+  .d-stat-val { font-family: 'Prompt', sans-serif; font-size: 16px; font-weight: 600; letter-spacing: -0.3px; }
+  .d-stat-label { font-size: 10px; color: var(--muted); margin-top: 3px; letter-spacing: 0.3px; }
+
+  /* PIE LEGEND */
+  .legend { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+  .legend-item { display: flex; align-items: center; gap: 7px; font-size: 12px; }
+  .legend-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; box-shadow: 0 0 8px currentColor; }
+
+  /* COMPARE TABLE */
+  .compare-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 13px 0; border-bottom: 1px solid var(--border-soft);
+  }
+  .compare-row:last-child { border: none; }
+  .compare-label { font-size: 13px; font-weight: 500; }
+  .compare-vals { display: flex; gap: 16px; align-items: center; }
+  .compare-val { font-size: 13px; color: var(--muted); text-align: right; }
+  .compare-badge {
+    font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 100px;
+  }
+  .badge-up { background: rgba(95,224,192,0.16); color: var(--accent4); }
+  .badge-down { background: rgba(255,122,133,0.16); color: var(--accent3); }
+
+  /* MONTH SELECTOR */
+  .month-selector {
+    display: flex; gap: 7px; overflow-x: auto; padding-bottom: 6px; margin-bottom: 16px;
+  }
+  .month-selector::-webkit-scrollbar { display: none; }
+  .month-chip {
+    flex-shrink: 0; padding: 9px 16px; border-radius: 100px; font-size: 12px; font-weight: 600;
+    border: 1px solid var(--border-soft); background: var(--surface2); color: var(--muted); cursor: pointer;
+    backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); transition: all 0.25s;
+  }
+  .month-chip.active {
+    background: var(--gold-grad); color: #2a210f; border-color: transparent;
+    box-shadow: 0 4px 14px rgba(212,175,106,0.3);
+  }
+
+  /* TRANSACTION LIST */
+  .tx-item {
+    display: flex; align-items: center; gap: 13px; padding: 13px 0;
+    border-bottom: 1px solid var(--border-soft);
+  }
+  .tx-item:last-child { border: none; }
+  .tx-icon { width: 42px; height: 42px; border-radius: 13px; display: flex; align-items: center; justify-content: center; font-size: 17px; flex-shrink: 0; box-shadow: inset 0 1px 0 rgba(255,255,255,0.06); }
+  .tx-info { flex: 1; }
+  .tx-name { font-size: 14px; font-weight: 500; }
+  .tx-meta { font-size: 11px; color: var(--muted); margin-top: 3px; }
+  .tx-amount { font-family: 'Prompt', sans-serif; font-size: 16px; font-weight: 600; letter-spacing: -0.3px; }
+  .tx-amount.income { color: var(--accent4); }
+  .tx-amount.expense { color: var(--accent3); }
+
+  /* EMPTY STATE */
+  .empty { text-align: center; padding: 48px 20px; color: var(--muted); }
+  .empty-icon { font-size: 44px; margin-bottom: 14px; opacity: 0.7; }
+  .empty-text { font-size: 15px; }
+
+  /* SEGMENT */
+  .segment { display: flex; background: var(--surface2); border-radius: var(--radius-sm); padding: 4px; margin-bottom: 16px; border: 1px solid var(--border-soft); }
+  .seg-btn {
+    flex: 1; padding: 11px; border-radius: 12px; font-size: 13px; font-weight: 600;
+    text-align: center; cursor: pointer; color: var(--muted); transition: all 0.25s cubic-bezier(.2,.8,.2,1);
+  }
+  .seg-btn.active {
+    background: var(--gold-grad); color: #2a210f;
+    box-shadow: 0 4px 14px rgba(212,175,106,0.3);
+  }
+
+  .divider { height: 1px; background: var(--border-soft); margin: 16px 0; }
+
+  /* BANK BADGE */
+  .bank-badge {
+    display: inline-flex; align-items: center; gap: 4px; padding: 5px 12px;
+    border-radius: 100px; font-size: 11px; font-weight: 600; margin-right: 4px; margin-bottom: 4px;
+  }
+
+  /* TOAST */
+  .toast {
+    position: fixed; bottom: calc(var(--nav-h) + 20px); left: 50%; transform: translateX(-50%) translateY(20px);
+    background: var(--gold-grad); color: #2a210f; padding: 13px 26px; border-radius: 100px;
+    font-weight: 700; font-size: 14px; z-index: 600; opacity: 0; transition: all 0.35s cubic-bezier(.2,.8,.2,1);
+    white-space: nowrap; box-shadow: 0 10px 32px rgba(212,175,106,0.4);
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* SCROLLBAR */
+  .page::-webkit-scrollbar { width: 3px; }
+  .page::-webkit-scrollbar-track { background: transparent; }
+  .page::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  .row { display: flex; gap: 10px; }
+  .row > * { flex: 1; }
+
+  .bank-row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
+  .bank-card {
+    flex: 1; min-width: calc(50% - 5px); background: var(--surface2); border-radius: var(--radius-sm);
+    padding: 14px; border: 1px solid var(--border-soft);
+  }
+  .bank-name { font-size: 12px; color: var(--muted); font-weight: 500; }
+  .bank-val { font-family: 'Prompt', sans-serif; font-size: 19px; font-weight: 600; margin-top: 5px; letter-spacing: -0.3px; }
+  .bank-compare { font-size: 11px; margin-top: 5px; font-weight: 600; }
+
+  #addDoctorModal {
+    position: fixed; inset: 0; z-index: 200; background: rgba(0,0,0,0.7);
+    backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+    display: none; align-items: flex-end; justify-content: center;
+  }
+  #addDoctorModal.open { display: flex; }
+  .modal-sheet {
+    background: linear-gradient(180deg, #181c2c 0%, #12141f 100%);
+    border-radius: 28px 28px 0 0; padding: 26px 22px 34px;
+    width: 100%; max-width: 480px; animation: slideUp 0.4s cubic-bezier(.2,.8,.2,1);
+    border-top: 1px solid var(--border); box-shadow: 0 -16px 50px rgba(0,0,0,0.5);
+  }
+  .light .modal-sheet { background: linear-gradient(180deg, #ffffff 0%, #f7f3ea 100%); }
+  @keyframes slideUp { from { transform: translateY(100%); } to { transform: none; } }
+  .modal-handle { width: 42px; height: 5px; background: var(--border); border-radius: 3px; margin: 0 auto 22px; }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- TOP BAR -->
+  <div class="topbar">
+    <div class="topbar-title">Dent<span>Flow</span></div>
+    <div class="topbar-actions">
+      <div class="icon-btn" id="themeToggle" title="สลับธีม">🌙</div>
+      <div class="icon-btn" title="สำรอง/กู้ข้อมูล" onclick="openBackupModal()" style="font-size:15px;">💾</div>
+      <div style="position:relative;">
+        <div class="icon-btn" id="monthDisplay" style="width:auto;padding:0 14px;font-size:13px;font-weight:700;border-radius:20px;gap:4px;display:flex;align-items:center;" onclick="toggleMonthPicker()">
+          <span id="monthDisplayText">—</span><span style="font-size:10px;color:var(--muted);">▼</span>
+        </div>
+        <div id="monthPickerDrop" style="display:none;position:absolute;right:0;top:44px;background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:8px;z-index:200;min-width:200px;box-shadow:0 8px 32px rgba(0,0,0,0.4);max-height:280px;overflow-y:auto;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAGES -->
+  <div class="pages">
+
+    <!-- PAGE 1: DASHBOARD -->
+    <div class="page active" id="page-dashboard">
+      <!-- PROFIT HERO -->
+      <div class="profit-hero" id="heroProfitCard">
+        <div class="label">กำไรสุทธิเดือนนี้</div>
+        <div class="amount" id="heroProfit">฿0</div>
+        <div class="compare" id="heroProfitCompare">—</div>
+      </div>
+
+      <!-- METRIC GRID -->
+      <div class="metric-grid">
+        <div class="metric-card">
+          <div class="glow" style="background:var(--accent)"></div>
+          <div class="metric-label">รายรับรวม</div>
+          <div class="metric-value" id="dashRevenue">฿0</div>
+          <div class="metric-sub" id="dashRevenueComp">—</div>
+        </div>
+        <div class="metric-card">
+          <div class="glow" style="background:var(--accent3)"></div>
+          <div class="metric-label">รายจ่ายรวม</div>
+          <div class="metric-value" id="dashExpense">฿0</div>
+          <div class="metric-sub" id="dashExpenseComp">—</div>
+        </div>
+        <div class="metric-card">
+          <div class="glow" style="background:var(--accent4)"></div>
+          <div class="metric-label">รายรับเฉลี่ย/วัน</div>
+          <div class="metric-value" id="dashAvgDay">฿0</div>
+          <div class="metric-sub" id="dashWorkDays" style="color:var(--muted)">0 วันทำงาน</div>
+        </div>
+        <div class="metric-card">
+          <div class="glow" style="background:var(--accent2)"></div>
+          <div class="metric-label">หมอยอดเยี่ยม</div>
+          <div class="metric-value" style="font-size:16px;" id="dashTopDoctor">—</div>
+          <div class="metric-sub" id="dashTopDoctorVal" style="color:var(--muted)">—</div>
+        </div>
+      </div>
+
+      <!-- INSIGHTS -->
+      <div class="section-title">Insights</div>
+      <div class="insight-strip" id="insightStrip"></div>
+
+      <!-- CHART 12 MONTHS -->
+      <div class="card">
+        <div class="section-title" style="margin-bottom:14px;">ย้อนหลัง 12 เดือน</div>
+        <div class="tabs" id="chartTabs">
+          <div class="tab active" data-chart="revenue">รายรับ</div>
+          <div class="tab" data-chart="expense">รายจ่าย</div>
+          <div class="tab" data-chart="profit">กำไร</div>
+        </div>
+        <div class="chart-wrap"><canvas id="mainChart"></canvas></div>
+      </div>
+
+      <!-- RECENT TX -->
+      <div class="card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+          <div class="section-title" style="margin:0">รายการล่าสุด</div>
+          <span style="font-size:12px;color:var(--accent);font-weight:600;" id="viewAllBtn">ดูทั้งหมด →</span>
+        </div>
+        <div id="recentTxList"><div class="empty"><div class="empty-icon">📋</div><div class="empty-text">ยังไม่มีรายการ</div></div></div>
+      </div>
+    </div>
+
+    <!-- PAGE 2: FINANCE -->
+    <div class="page" id="page-finance">
+      <div class="month-selector" id="financeMonthSel"></div>
+
+      <div class="segment">
+        <div class="seg-btn active" id="seg-income" onclick="setFinanceSeg('income')" style="font-size:12px;padding:11px 6px;">รายรับ</div>
+        <div class="seg-btn" id="seg-sso" onclick="setFinanceSeg('sso')" style="font-size:12px;padding:11px 6px;">ประกันสังคม</div>
+        <div class="seg-btn" id="seg-expense" onclick="setFinanceSeg('expense')" style="font-size:12px;padding:11px 6px;">รายจ่าย</div>
+      </div>
+
+      <!-- INCOME SECTION -->
+      <div id="financeIncome">
+        <div class="card" style="margin-bottom:10px;">
+          <div class="section-title">สรุปรายรับ</div>
+          <div style="display:flex;justify-content:space-between;align-items:flex-end;">
+            <div>
+              <div style="font-size:12px;color:var(--muted);">รายรับรวม</div>
+              <div id="finIncomeTot" style="font-family:'Prompt',sans-serif;font-size:28px;font-weight:700;">฿0</div>
+            </div>
+            <div id="finIncomeComp" style="text-align:right;font-size:13px;font-weight:600;"></div>
+          </div>
+          <div class="chart-wrap chart-mini" style="margin-top:14px;"><canvas id="incomeBreakChart"></canvas></div>
+          <div class="legend" id="incomeLegend"></div>
+        </div>
+
+        <!-- REVENUE BY DOCTOR -->
+        <div class="card card-sm">
+          <div class="section-title">รายรับแยกตามหมอ</div>
+          <div id="incomeTypeList"></div>
+        </div>
+      </div>
+
+      <!-- SOCIAL SECURITY SECTION -->
+      <div id="financeSso" style="display:none;">
+        <div class="card" style="margin-bottom:10px;">
+          <div class="section-title">🏥 สรุปประกันสังคม</div>
+          <div style="display:flex;justify-content:space-between;align-items:flex-end;">
+            <div>
+              <div style="font-size:12px;color:var(--muted);">รับเข้าเดือนนี้</div>
+              <div id="finSsoTot" style="font-family:'Prompt',sans-serif;font-size:28px;font-weight:700;">฿0</div>
+            </div>
+            <div id="finSsoComp" style="text-align:right;font-size:13px;font-weight:600;"></div>
+          </div>
+          <div style="margin-top:12px;padding:10px 14px;background:rgba(95,224,192,0.06);border-radius:12px;font-size:12px;color:var(--muted);">แยกต่างหากจากรายรับหลัก ไม่กระทบกำไรคลินิก</div>
+        </div>
+        <div class="card card-sm">
+          <div class="section-title">รายการประกันสังคม</div>
+          <div id="ssoList"></div>
+        </div>
+      </div>
+
+      <!-- EXPENSE SECTION -->
+      <div id="financeExpense" style="display:none;">
+        <div class="card" style="margin-bottom:10px;">
+          <div class="section-title">สรุปรายจ่าย</div>
+          <div style="display:flex;justify-content:space-between;align-items:flex-end;">
+            <div>
+              <div style="font-size:12px;color:var(--muted);">รายจ่ายรวม</div>
+              <div id="finExpenseTot" style="font-family:'Prompt',sans-serif;font-size:28px;font-weight:700;">฿0</div>
+            </div>
+            <div id="finExpenseComp" style="text-align:right;font-size:13px;font-weight:600;"></div>
+          </div>
+          <div class="chart-wrap chart-mini" style="margin-top:14px;"><canvas id="expenseBreakChart"></canvas></div>
+          <div class="legend" id="expenseLegend"></div>
+        </div>
+        <div class="card card-sm">
+          <div class="section-title">แยกตามหมวด</div>
+          <div id="expenseCatList"></div>
+        </div>
+        <div class="card card-sm" id="labByDoctorCard" style="display:none;">
+          <div class="section-title">🧪 ค่า Lab แยกตามหมอ</div>
+          <div id="labByDoctorList"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PAGE 3: DOCTORS -->
+    <div class="page" id="page-doctors">
+      <div class="month-selector" id="doctorMonthSel"></div>
+
+      <!-- SORT + REORDER CONTROLS -->
+      <div style="display:flex;gap:8px;margin-bottom:12px;align-items:center;">
+        <div style="flex:1;display:flex;background:var(--surface2);border-radius:10px;padding:3px;gap:2px;" id="doctorSortBtns">
+          <div class="seg-btn active" id="sort-custom" onclick="setDoctorSort('custom')" style="font-size:12px;padding:7px 6px;">✦ กำหนดเอง</div>
+          <div class="seg-btn" id="sort-revenue" onclick="setDoctorSort('revenue')" style="font-size:12px;padding:7px 6px;">฿ รายได้</div>
+          <div class="seg-btn" id="sort-growth" onclick="setDoctorSort('growth')" style="font-size:12px;padding:7px 6px;">📈 โต</div>
+          <div class="seg-btn" id="sort-name" onclick="setDoctorSort('name')" style="font-size:12px;padding:7px 6px;">ก-ฮ ชื่อ</div>
+        </div>
+        <div id="reorderToggleBtn" onclick="toggleReorderMode()" style="flex-shrink:0;padding:8px 12px;border-radius:10px;background:var(--surface);border:1px solid var(--border);font-size:12px;font-weight:600;cursor:pointer;color:var(--muted);white-space:nowrap;">⠿ จัดลำดับ</div>
+      </div>
+
+      <div id="reorderHint" style="display:none;background:rgba(124,106,255,0.12);border:1px solid var(--accent2);border-radius:10px;padding:10px 14px;margin-bottom:10px;font-size:12px;color:var(--accent2);font-weight:500;">
+        ☝️ กดค้างแล้วลากเพื่อจัดลำดับ — กด "เสร็จ" เมื่อเรียบร้อย
+      </div>
+
+      <div id="doctorList"></div>
+      <button class="btn-secondary" onclick="document.getElementById('addDoctorModal').classList.add('open')">+ เพิ่มหมอ</button>
+    </div>
+
+    <!-- PAGE 4: ADD DATA -->
+    <div class="page" id="page-add">
+      <div class="segment">
+        <div class="seg-btn active" id="seg-addrev" onclick="setAddSeg('revenue')" style="font-size:12px;padding:11px 6px;">+ รายรับ</div>
+        <div class="seg-btn" id="seg-addsso" onclick="setAddSeg('sso')" style="font-size:12px;padding:11px 6px;">+ ประกันสังคม</div>
+        <div class="seg-btn" id="seg-addexp" onclick="setAddSeg('expense')" style="font-size:12px;padding:11px 6px;">+ รายจ่าย</div>
+      </div>
+
+      <!-- REVENUE FORM -->
+      <div id="addRevenue">
+        <div class="card">
+          <div class="form-group">
+            <label class="form-label">วันที่</label>
+            <input class="form-input" type="date" id="revDate">
+          </div>
+          <div class="form-group">
+            <label class="form-label">หมอ</label>
+            <select class="form-select" id="revDoctor"></select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">จำนวนเงิน (บาท)</label>
+            <input class="form-input" type="number" id="revAmount" placeholder="0" inputmode="decimal">
+          </div>
+          <div class="form-group">
+            <label class="form-label">หมายเหตุ</label>
+            <input class="form-input" type="text" id="revNote" placeholder="หมายเหตุ (ไม่บังคับ)">
+          </div>
+          <button class="btn-primary" onclick="saveRevenue()">💾 บันทึกรายรับ</button>
+        </div>
+      </div>
+
+      <!-- SOCIAL SECURITY FORM -->
+      <div id="addSso" style="display:none;">
+        <div class="card">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;padding:12px 14px;background:rgba(95,224,192,0.08);border:1px solid rgba(95,224,192,0.2);border-radius:14px;">
+            <div style="font-size:22px;">🏥</div>
+            <div style="font-size:12px;color:var(--muted);line-height:1.5;">รายรับประกันสังคมจะ<b style="color:var(--accent4);">แยกดูต่างหาก</b> ไม่รวมในรายรับหลัก/กำไร</div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">วันที่</label>
+            <input class="form-input" type="date" id="ssoDate">
+          </div>
+          <div class="form-group">
+            <label class="form-label">จำนวนเงิน (บาท)</label>
+            <input class="form-input" type="number" id="ssoAmount" placeholder="0" inputmode="decimal">
+          </div>
+          <div class="form-group">
+            <label class="form-label">หมายเหตุ</label>
+            <input class="form-input" type="text" id="ssoNote" placeholder="หมายเหตุ (ไม่บังคับ)">
+          </div>
+          <button class="btn-primary" onclick="saveSso()">💾 บันทึกประกันสังคม</button>
+        </div>
+      </div>
+
+      <!-- EXPENSE FORM -->
+      <div id="addExpense" style="display:none;">
+        <div class="card">
+          <div class="form-group">
+            <label class="form-label">วันที่</label>
+            <input class="form-input" type="date" id="expDate">
+          </div>
+          <div class="form-group">
+            <label class="form-label">หมวดรายจ่าย</label>
+            <div id="expCatDisplay" onclick="openCatPicker()" style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-radius:12px;background:var(--surface2);border:1.5px solid var(--border);cursor:pointer;">
+              <span id="expCatLabel" style="font-size:15px;">👨‍⚕️ ค่าหมอ (DF)</span>
+              <span style="color:var(--muted);font-size:12px;">▼</span>
+            </div>
+            <input type="hidden" id="expCategory" value="doctor_commission">
+          </div>
+          <div class="form-group" id="expDoctorGroup" style="display:none;">
+            <label class="form-label">หมอ (สำหรับค่า Lab)</label>
+            <select class="form-select" id="expDoctor"></select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">จำนวนเงิน (บาท)</label>
+            <input class="form-input" type="number" id="expAmount" placeholder="0" inputmode="decimal">
+          </div>
+          <div class="form-group">
+            <label class="form-label">หมายเหตุ</label>
+            <input class="form-input" type="text" id="expNote" placeholder="หมายเหตุ (ไม่บังคับ)">
+          </div>
+          <button class="btn-primary" onclick="saveExpense()">💾 บันทึกรายจ่าย</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- PAGE 5: COMPARE -->
+    <div class="page" id="page-compare">
+      <div class="card">
+        <div class="section-title">เปรียบเทียบรายรับ-รายจ่าย-กำไร</div>
+        <div class="tabs">
+          <div class="tab active" id="cmpTab1" onclick="setCmpTab(1)">เดือนนี้ vs ก่อน</div>
+          <div class="tab" id="cmpTab2" onclick="setCmpTab(2)">ปีนี้ vs ปีก่อน</div>
+        </div>
+        <div id="cmpTableMain"></div>
+      </div>
+
+      <div class="card">
+        <div class="section-title">Performance หมอ</div>
+        <div id="cmpDoctorTable"></div>
+      </div>
+
+      <div class="card">
+        <div class="section-title">🤖 Auto Insights</div>
+        <div id="autoInsights"></div>
+      </div>
+    </div>
+
+  </div><!-- /pages -->
+
+  <!-- BOTTOM NAV -->
+  <div class="bottom-nav">
+    <div class="nav-item active" data-page="dashboard" onclick="navTo('dashboard',this)">
+      <div class="nav-icon">🏠</div>
+      <div class="nav-label">Dashboard</div>
+    </div>
+    <div class="nav-item" data-page="finance" onclick="navTo('finance',this)">
+      <div class="nav-icon">💰</div>
+      <div class="nav-label">Finance</div>
+    </div>
+    <div class="nav-item" data-page="doctors" onclick="navTo('doctors',this)">
+      <div class="nav-icon">🦷</div>
+      <div class="nav-label">Doctors</div>
+    </div>
+    <div class="nav-item nav-add" data-page="add" onclick="navTo('add',this)">
+      <div class="nav-icon">➕</div>
+      <div class="nav-label">บันทึก</div>
+    </div>
+    <div class="nav-item" data-page="compare" onclick="navTo('compare',this)">
+      <div class="nav-icon">📈</div>
+      <div class="nav-label">Compare</div>
+    </div>
+  </div>
+</div>
+
+<!-- ADD DOCTOR MODAL -->
+<div id="addDoctorModal">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div style="font-family:'Prompt',sans-serif;font-size:18px;font-weight:700;margin-bottom:16px;">เพิ่มหมอใหม่</div>
+    <div class="form-group">
+      <label class="form-label">ชื่อ-นามสกุล</label>
+      <input class="form-input" type="text" id="newDoctorName" placeholder="นพ./ทพ. ...">
+    </div>
+    <div class="form-group">
+      <label class="form-label">สีประจำตัว</label>
+      <select class="form-select" id="newDoctorColor">
+        <option value="#4fffb0">🟢 มิ้นต์</option>
+        <option value="#7c6aff">🟣 ม่วง</option>
+        <option value="#ffd166">🟡 เหลือง</option>
+        <option value="#ff6b6b">🔴 แดง</option>
+        <option value="#06b6d4">🔵 ฟ้า</option>
+        <option value="#f97316">🟠 ส้ม</option>
+        <option value="#ec4899">🩷 ชมพู</option>
+        <option value="#34d399">🌿 เขียว</option>
+        <option value="#f1f5f9">⚪ ขาว</option>
+        <option value="#a78bfa">💜 ลาเวนเดอร์</option>
+      </select>
+    </div>
+    <button class="btn-primary" onclick="saveDoctor()">✅ เพิ่มหมอ</button>
+    <button class="btn-secondary" onclick="document.getElementById('addDoctorModal').classList.remove('open')">ยกเลิก</button>
+  </div>
+</div>
+
+<!-- CATEGORY PICKER MODAL -->
+<div id="catPickerModal" style="position:fixed;inset:0;z-index:300;background:rgba(0,0,0,0.65);display:none;align-items:flex-end;justify-content:center;">
+  <div style="background:var(--surface);border-radius:24px 24px 0 0;width:100%;max-width:480px;animation:slideUp 0.3s ease;max-height:85dvh;display:flex;flex-direction:column;">
+    <div style="padding:20px 20px 0;">
+      <div style="width:40px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 16px;"></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+        <div style="font-family:'Prompt',sans-serif;font-size:17px;font-weight:700;">เลือกหมวดรายจ่าย</div>
+        <div onclick="closeCatPicker()" style="font-size:20px;cursor:pointer;color:var(--muted);padding:4px;">✕</div>
+      </div>
+    </div>
+    <div id="catPickerList" style="overflow-y:auto;padding:0 12px 8px;flex:1;"></div>
+    <div style="padding:12px 20px 28px;border-top:1px solid var(--border);">
+      <button class="btn-primary" style="background:var(--surface2);color:var(--text);border:1.5px dashed var(--border);" onclick="openAddCatModal()">
+        ✦ เพิ่มหมวดใหม่
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD CUSTOM CATEGORY MODAL -->
+<div id="addCatModal" style="position:fixed;inset:0;z-index:400;background:rgba(0,0,0,0.7);display:none;align-items:flex-end;justify-content:center;">
+  <div style="background:var(--surface);border-radius:24px 24px 0 0;width:100%;max-width:480px;padding:24px 20px 32px;animation:slideUp 0.3s ease;">
+    <div style="width:40px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 20px;"></div>
+    <div style="font-family:'Prompt',sans-serif;font-size:17px;font-weight:700;margin-bottom:16px;">เพิ่มหมวดรายจ่ายใหม่</div>
+    <div class="form-group">
+      <label class="form-label">ชื่อหมวด</label>
+      <input class="form-input" type="text" id="newCatName" placeholder="เช่น ค่าเช่าอุปกรณ์">
+    </div>
+    <div class="form-group">
+      <label class="form-label">ไอคอน Emoji</label>
+      <div id="emojiPicker" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px;"></div>
+      <input class="form-input" type="text" id="newCatEmoji" placeholder="หรือพิมพ์ emoji เอง" style="margin-top:6px;" maxlength="4">
+    </div>
+    <button class="btn-primary" onclick="saveCustomCat()">✅ บันทึกหมวดใหม่</button>
+    <button class="btn-secondary" onclick="closeAddCatModal()">ยกเลิก</button>
+  </div>
+</div>
+
+<!-- BACKUP / RESTORE MODAL -->
+<div id="backupModal" style="position:fixed;inset:0;z-index:500;background:rgba(0,0,0,0.7);display:none;align-items:flex-end;justify-content:center;">
+  <div style="background:var(--surface);border-radius:24px 24px 0 0;width:100%;max-width:480px;padding:24px 20px 36px;animation:slideUp 0.3s ease;max-height:88dvh;overflow-y:auto;">
+    <div style="width:40px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 20px;"></div>
+    <div style="font-family:'Prompt',sans-serif;font-size:18px;font-weight:700;margin-bottom:6px;">💾 สำรอง & เชื่อมข้อมูล</div>
+    <div style="font-size:13px;color:var(--muted);margin-bottom:20px;line-height:1.6;">ซิงค์ขึ้น Google Sheets อัตโนมัติ หรือสำรองไฟล์เก็บเอง</div>
+
+    <!-- GOOGLE SHEETS SYNC -->
+    <div style="background:linear-gradient(135deg, rgba(95,224,192,0.1), rgba(124,124,240,0.06));border:1px solid rgba(95,224,192,0.25);border-radius:16px;padding:16px;margin-bottom:12px;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+        <div style="font-size:24px;">📊</div>
+        <div style="flex:1;">
+          <div style="font-size:14px;font-weight:700;">Google Sheets — ซิงค์อัตโนมัติ</div>
+          <div style="font-size:12px;color:var(--muted);" id="syncStatusText">ยังไม่ได้เชื่อมต่อ</div>
+        </div>
+        <div id="syncDot" style="width:10px;height:10px;border-radius:50%;background:var(--muted);flex-shrink:0;"></div>
+      </div>
+      <input class="form-input" type="text" id="syncUrlInput" placeholder="วาง Web App URL ที่ได้จาก Apps Script" style="margin-bottom:8px;font-size:13px;">
+      <div style="display:flex;gap:8px;">
+        <button onclick="saveSyncUrl()" style="flex:1;padding:12px;border-radius:12px;border:none;background:var(--accent);color:#2a210f;font-size:14px;font-weight:700;font-family:'Prompt',sans-serif;cursor:pointer;">
+          🔗 เชื่อมต่อ
+        </button>
+        <button onclick="syncNow()" id="syncNowBtn" style="flex:1;padding:12px;border-radius:12px;border:1.5px solid var(--border);background:var(--surface);color:var(--text);font-size:14px;font-weight:600;font-family:'Prompt',sans-serif;cursor:pointer;">
+          ⬆️ ซิงค์เลย
+        </button>
+      </div>
+      <div style="margin-top:10px;display:flex;align-items:center;justify-content:space-between;">
+        <span style="font-size:12px;color:var(--muted);">ซิงค์อัตโนมัติเมื่อบันทึก</span>
+        <div onclick="toggleAutoSync()" id="autoSyncToggle" style="width:44px;height:24px;border-radius:100px;background:var(--surface2);border:1px solid var(--border);cursor:pointer;position:relative;transition:background 0.2s;">
+          <div id="autoSyncKnob" style="position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:var(--muted);transition:all 0.2s;"></div>
+        </div>
+      </div>
+      <button onclick="openSheetGuide()" style="width:100%;margin-top:10px;padding:9px;border-radius:10px;border:none;background:transparent;color:var(--accent);font-size:12px;font-weight:600;cursor:pointer;text-decoration:underline;">
+        📖 วิธีตั้งค่า Google Sheets (ทำครั้งเดียว)
+      </button>
+    </div>
+
+    <!-- EXPORT -->
+    <div style="background:var(--surface2);border-radius:16px;padding:16px;margin-bottom:12px;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+        <div style="font-size:24px;">📤</div>
+        <div>
+          <div style="font-size:14px;font-weight:700;">Export — บันทึกไฟล์</div>
+          <div style="font-size:12px;color:var(--muted);">ดาวน์โหลดไฟล์ .json เก็บไว้</div>
+        </div>
+      </div>
+      <button onclick="exportData()" style="width:100%;padding:13px;border-radius:12px;border:none;background:var(--accent);color:#2a210f;font-size:15px;font-weight:700;font-family:'Prompt',sans-serif;cursor:pointer;">
+        ⬇️ ดาวน์โหลดไฟล์ข้อมูล
+      </button>
+    </div>
+
+    <!-- IMPORT -->
+    <div style="background:var(--surface2);border-radius:16px;padding:16px;margin-bottom:16px;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+        <div style="font-size:24px;">📥</div>
+        <div>
+          <div style="font-size:14px;font-weight:700;">Import — กู้คืนข้อมูล</div>
+          <div style="font-size:12px;color:var(--muted);">เลือกไฟล์ .json ที่บันทึกไว้</div>
+        </div>
+      </div>
+      <label style="display:block;width:100%;padding:13px;border-radius:12px;border:1.5px dashed var(--border);background:var(--surface);color:var(--text);font-size:15px;font-weight:600;font-family:'Prompt',sans-serif;cursor:pointer;text-align:center;box-sizing:border-box;">
+        📂 เลือกไฟล์ข้อมูล
+        <input type="file" accept=".json" onchange="importData(event)" style="display:none;">
+      </label>
+    </div>
+
+    <!-- DATA SUMMARY -->
+    <div id="backupSummary" style="background:rgba(95,224,192,0.07);border:1px solid rgba(95,224,192,0.2);border-radius:12px;padding:12px 14px;margin-bottom:16px;font-size:13px;line-height:1.8;"></div>
+
+    <button onclick="closeBackupModal()" style="width:100%;padding:13px;border-radius:12px;border:1.5px solid var(--border);background:transparent;color:var(--muted);font-size:15px;font-weight:600;cursor:pointer;font-family:'Sarabun',sans-serif;">
+      ปิด
+    </button>
+  </div>
+</div>
+
+<!-- SHEET SETUP GUIDE MODAL -->
+<div id="sheetGuideModal" style="position:fixed;inset:0;z-index:550;background:rgba(0,0,0,0.8);display:none;align-items:flex-end;justify-content:center;">
+  <div style="background:var(--surface);border-radius:24px 24px 0 0;width:100%;max-width:480px;padding:24px 20px 36px;animation:slideUp 0.3s ease;max-height:90dvh;overflow-y:auto;">
+    <div style="width:40px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 20px;"></div>
+    <div style="font-family:'Prompt',sans-serif;font-size:18px;font-weight:700;margin-bottom:4px;">📖 วิธีเชื่อม Google Sheets</div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:18px;">ทำครั้งเดียว ใช้เวลา ~3 นาที</div>
+
+    <div style="font-size:13px;line-height:1.9;color:var(--text);">
+      <div style="background:var(--surface2);border-radius:14px;padding:14px;margin-bottom:10px;">
+        <b style="color:var(--accent);">ขั้นที่ 1</b> — เปิด <a href="https://sheets.new" target="_blank" style="color:var(--accent4);">sheets.new</a> สร้าง Google Sheet ใหม่ ตั้งชื่ออะไรก็ได้
+      </div>
+      <div style="background:var(--surface2);border-radius:14px;padding:14px;margin-bottom:10px;">
+        <b style="color:var(--accent);">ขั้นที่ 2</b> — เมนูบนสุด กด <b>Extensions → Apps Script</b>
+      </div>
+      <div style="background:var(--surface2);border-radius:14px;padding:14px;margin-bottom:10px;">
+        <b style="color:var(--accent);">ขั้นที่ 3</b> — ลบโค้ดเดิมทั้งหมด แล้ววางโค้ดนี้ลงไป:
+        <div style="position:relative;margin-top:8px;">
+          <pre id="appsScriptCode" style="background:#0a0c14;border:1px solid var(--border);border-radius:10px;padding:12px;font-size:10px;line-height:1.5;overflow-x:auto;color:#9ad;white-space:pre;font-family:monospace;">function doPost(e) {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet();
+  var data = JSON.parse(e.postData.contents);
+  writeTab(sheet, "รายรับ", data.revenues, ["date","doctorId","amount","note"]);
+  writeTab(sheet, "รายจ่าย", data.expenses, ["date","category","amount","doctorId","note"]);
+  writeTab(sheet, "ประกันสังคม", data.socialSecurity, ["date","amount","note"]);
+  writeTab(sheet, "หมอ", data.doctors, ["id","name","color"]);
+  return ContentService.createTextOutput(
+    JSON.stringify({ok:true})).setMimeType(ContentService.MimeType.JSON);
+}
+function writeTab(ss, name, rows, cols) {
+  var sh = ss.getSheetByName(name) || ss.insertSheet(name);
+  sh.clear();
+  sh.appendRow(cols);
+  (rows||[]).forEach(function(r){
+    sh.appendRow(cols.map(function(c){ return r[c]!==undefined ? r[c] : ""; }));
+  });
+}</pre>
+          <button onclick="copyAppsScript()" style="position:absolute;top:8px;right:8px;padding:6px 12px;border-radius:8px;border:none;background:var(--accent);color:#2a210f;font-size:11px;font-weight:700;cursor:pointer;">คัดลอก</button>
+        </div>
+      </div>
+      <div style="background:var(--surface2);border-radius:14px;padding:14px;margin-bottom:10px;">
+        <b style="color:var(--accent);">ขั้นที่ 4</b> — กด <b>Deploy → New deployment</b> → ไอคอนเฟือง เลือก <b>Web app</b>
+      </div>
+      <div style="background:var(--surface2);border-radius:14px;padding:14px;margin-bottom:10px;">
+        <b style="color:var(--accent);">ขั้นที่ 5</b> — ตั้งค่า: <br>• Execute as: <b>Me</b><br>• Who has access: <b>Anyone</b><br>แล้วกด <b>Deploy</b> (ครั้งแรกต้องกด Authorize อนุญาตสิทธิ์)
+      </div>
+      <div style="background:var(--surface2);border-radius:14px;padding:14px;margin-bottom:10px;">
+        <b style="color:var(--accent);">ขั้นที่ 6</b> — คัดลอก <b>Web app URL</b> ที่ได้ (ลงท้ายด้วย /exec) → กลับมาวางในช่องเชื่อมต่อ แล้วกด "เชื่อมต่อ"
+      </div>
+      <div style="background:rgba(255,209,102,0.1);border:1px solid rgba(255,209,102,0.3);border-radius:14px;padding:14px;font-size:12px;color:var(--text);">
+        💡 <b>หมายเหตุ:</b> ถ้าแก้โค้ด Apps Script ภายหลัง ต้อง Deploy ใหม่ทุกครั้ง (Manage deployments → Edit → New version)
+      </div>
+    </div>
+
+    <button onclick="closeSheetGuide()" style="width:100%;margin-top:16px;padding:14px;border-radius:14px;border:none;background:var(--gold-grad);color:#2a210f;font-size:15px;font-weight:700;cursor:pointer;font-family:'Prompt',sans-serif;">
+      เข้าใจแล้ว
+    </button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ===== CATEGORY MANAGEMENT =====
+const DEFAULT_CATS = [
+  { id: 'doctor_commission', label: 'ค่าหมอ (DF)', emoji: '👨‍⚕️', builtIn: true },
+  { id: 'salary_full',       label: 'เงินเดือนพนักงานประจำ', emoji: '💼', builtIn: true },
+  { id: 'salary_part',       label: 'เงินเดือนพาร์ทไทม์',    emoji: '⏰', builtIn: true },
+  { id: 'lab',               label: 'ค่า Lab',               emoji: '🧪', builtIn: true },
+  { id: 'dental_supply',     label: 'วัสดุทันตกรรม',         emoji: '🦷', builtIn: true },
+  { id: 'anesthetic',        label: 'ยาชา',                  emoji: '💉', builtIn: true },
+  { id: 'medicine',          label: 'ยา',                    emoji: '💊', builtIn: true },
+  { id: 'macro',             label: 'Macro',                  emoji: '📦', builtIn: true },
+  { id: 'clinic_cost',       label: 'ค่าใช้จ่ายคลินิก',      emoji: '🏠', builtIn: true },
+  { id: 'maintenance',       label: 'ซ่อมบำรุง/ล้างแอร์',    emoji: '🔧', builtIn: true },
+  { id: 'marketing',         label: 'Marketing',              emoji: '📣', builtIn: true },
+  { id: 'food',              label: 'กินข้าว',               emoji: '🍽️', builtIn: true },
+  { id: 'travel',            label: 'เที่ยว',                emoji: '✈️', builtIn: true },
+  { id: 'shopee',            label: 'Shopee',                 emoji: '🛍️', builtIn: true },
+  { id: 'tax',               label: 'ภาษี',                  emoji: '📑', builtIn: true },
+  { id: 'other',             label: 'อื่นๆ',                 emoji: '📌', builtIn: true },
+];
+
+const EMOJI_PRESETS = ['💰','🏥','🚗','📱','🎓','🛒','🖥️','✈️','🎁','🏋️','📷','🔑','💡','🌐','🎪','🧹','🪑','🔌','📞','🎨'];
+
+function getAllCats() {
+  const custom = DB.customCats || [];
+  return [...DEFAULT_CATS, ...custom];
+}
+
+function getCatLabel(id) {
+  const cat = getAllCats().find(c => c.id === id);
+  return cat ? cat.label : id;
+}
+
+function getCatEmoji(id) {
+  const cat = getAllCats().find(c => c.id === id);
+  return cat ? cat.emoji : '📌';
+}
+
+function getCatDisplay(id) {
+  const cat = getAllCats().find(c => c.id === id);
+  return cat ? `${cat.emoji} ${cat.label}` : id;
+}
+
+// Category Picker
+function openCatPicker() {
+  renderCatPickerList();
+  document.getElementById('catPickerModal').style.display = 'flex';
+}
+
+function closeCatPicker() {
+  document.getElementById('catPickerModal').style.display = 'none';
+}
+
+function renderCatPickerList() {
+  const cats = getAllCats();
+  const currentVal = document.getElementById('expCategory').value;
+  const el = document.getElementById('catPickerList');
+  el.innerHTML = cats.map(cat => `
+    <div onclick="selectCat('${cat.id}','${cat.emoji} ${cat.label.replace(/'/g,"&#39;")}')"
+      style="display:flex;align-items:center;gap:12px;padding:13px 12px;border-radius:12px;cursor:pointer;
+        background:${cat.id===currentVal?'rgba(124,106,255,0.15)':'transparent'};
+        border:1px solid ${cat.id===currentVal?'var(--accent2)':'transparent'};
+        margin-bottom:4px;transition:background 0.15s;">
+      <div style="width:36px;height:36px;border-radius:10px;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">${cat.emoji}</div>
+      <div style="flex:1;">
+        <div style="font-size:14px;font-weight:600;color:var(--text);">${cat.label}</div>
+        ${!cat.builtIn ? `<div style="font-size:11px;color:var(--muted);">หมวดที่สร้างเอง</div>` : ''}
+      </div>
+      ${cat.id===currentVal ? '<div style="color:var(--accent2);font-size:16px;">✓</div>' : ''}
+      ${!cat.builtIn ? `<div onclick="event.stopPropagation();deleteCat('${cat.id}')" style="color:var(--accent3);font-size:14px;padding:4px 8px;cursor:pointer;">🗑</div>` : ''}
+    </div>`).join('');
+}
+
+function selectCat(id, displayText) {
+  document.getElementById('expCategory').value = id;
+  document.getElementById('expCatLabel').textContent = displayText;
+  // show doctor select only for Lab
+  const grp = document.getElementById('expDoctorGroup');
+  if (grp) {
+    if (id === 'lab') { populateExpDoctorSelect(); grp.style.display = ''; }
+    else grp.style.display = 'none';
+  }
+  closeCatPicker();
+}
+
+function deleteCat(id) {
+  if (!DB.customCats) return;
+  DB.customCats = DB.customCats.filter(c => c.id !== id);
+  saveDB();
+  renderCatPickerList();
+  // reset to first cat if deleted current
+  if (document.getElementById('expCategory').value === id) {
+    selectCat('doctor_commission', '👨‍⚕️ ค่าหมอ (DF)');
+  }
+  showToast('🗑 ลบหมวดแล้ว');
+}
+
+// Add custom category
+function openAddCatModal() {
+  closeCatPicker();
+  document.getElementById('newCatName').value = '';
+  document.getElementById('newCatEmoji').value = '';
+  // render emoji presets
+  document.getElementById('emojiPicker').innerHTML = EMOJI_PRESETS.map(e =>
+    `<div onclick="pickEmoji('${e}')" style="width:40px;height:40px;border-radius:10px;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:20px;cursor:pointer;border:1.5px solid var(--border);transition:border-color 0.15s;" id="emoji-${e}">${e}</div>`
+  ).join('');
+  document.getElementById('addCatModal').style.display = 'flex';
+}
+
+function pickEmoji(e) {
+  document.getElementById('newCatEmoji').value = e;
+  document.querySelectorAll('#emojiPicker > div').forEach(el => el.style.borderColor = 'var(--border)');
+  const el = document.getElementById('emoji-' + e);
+  if (el) el.style.borderColor = 'var(--accent)';
+}
+
+function closeAddCatModal() {
+  document.getElementById('addCatModal').style.display = 'none';
+  openCatPicker();
+}
+
+function saveCustomCat() {
+  const name = document.getElementById('newCatName').value.trim();
+  const emoji = document.getElementById('newCatEmoji').value.trim() || '📌';
+  if (!name) { showToast('กรุณากรอกชื่อหมวด'); return; }
+  if (!DB.customCats) DB.customCats = [];
+  const id = 'custom_' + Date.now();
+  DB.customCats.push({ id, label: name, emoji, builtIn: false });
+  saveDB();
+  document.getElementById('addCatModal').style.display = 'none';
+  showToast('✅ เพิ่มหมวดใหม่แล้ว');
+  // auto-select new cat
+  selectCat(id, `${emoji} ${name}`);
+  openCatPicker();
+}
+
+
+let DB = {
+  doctors: [],
+  revenues: [],
+  expenses: [],
+  customCats: [],
+  socialSecurity: []
+};
+
+function loadDB() {
+  try {
+    const saved = localStorage.getItem('dentflow_v2');
+    if (saved) DB = JSON.parse(saved);
+    if (!DB.customCats) DB.customCats = [];
+    if (!DB.socialSecurity) DB.socialSecurity = [];
+  } catch(e) {}
+}
+
+function saveDB() {
+  localStorage.setItem('dentflow_v2', JSON.stringify(DB));
+  localStorage.setItem('dentflow_lastSaved', new Date().toLocaleString('th-TH'));
+  if (typeof autoSyncDebounced === 'function') autoSyncDebounced();
+}
+
+// ===== HELPERS =====
+const fmt = (n) => '฿' + Math.round(n).toLocaleString('th-TH');
+const fmtShort = (n) => {
+  if (n >= 1000000) return '฿' + (n/1000000).toFixed(1) + 'M';
+  if (n >= 1000) return '฿' + Math.round(n/1000) + 'K';
+  return '฿' + n;
+};
+
+function getMonthKey(date) {
+  const d = new Date(date);
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+}
+
+function currentMonthKey() {
+  const now = new Date();
+  return now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
+}
+
+function prevMonthKey(key) {
+  const [y, m] = key.split('-').map(Number);
+  const d = new Date(y, m-2, 1);
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+}
+
+function monthLabel(key) {
+  const months = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+  const [y, m] = key.split('-').map(Number);
+  return months[m-1] + ' ' + (y+543-2500).toString().slice(-2);
+}
+
+function last12MonthKeys() {
+  const keys = [];
+  const now = new Date();
+  for (let i = 11; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    keys.push(d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0'));
+  }
+  return keys;
+}
+
+function pct(a, b) {
+  if (!b) return 0;
+  return ((a - b) / b * 100);
+}
+
+function pctStr(a, b) {
+  const p = pct(a, b);
+  const sign = p > 0 ? '+' : '';
+  return sign + p.toFixed(1) + '%';
+}
+
+function revenueByMonth(key) {
+  return DB.revenues.filter(r => getMonthKey(r.date) === key).reduce((s, r) => s + r.amount, 0);
+}
+
+function expenseByMonth(key) {
+  return DB.expenses.filter(e => getMonthKey(e.date) === key).reduce((s, e) => s + e.amount, 0);
+}
+
+function profitByMonth(key) {
+  return revenueByMonth(key) - expenseByMonth(key);
+}
+
+// ===== CURRENT SELECTION =====
+let currentMonth = currentMonthKey();
+let isLight = false;
+let mainChartType = 'revenue';
+let mainChartInst = null;
+let incomeBreakInst = null;
+let expenseBreakInst = null;
+let financeSeg = 'income';
+let addSeg = 'revenue';
+let cmpTab = 1;
+let financeMonth = currentMonthKey();
+let doctorMonth = currentMonthKey();
+
+// ===== MONTH PICKER =====
+function buildMonthPickerDrop() {
+  const keys = last12MonthKeys().reverse(); // latest first
+  const drop = document.getElementById('monthPickerDrop');
+  drop.innerHTML = keys.map(k => `
+    <div onclick="selectCurrentMonth('${k}')" style="padding:10px 14px;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;
+      background:${k===currentMonth?'var(--accent2)':'transparent'};color:${k===currentMonth?'#fff':'var(--text)'};
+      transition:background 0.15s;">
+      ${monthLabel(k)}
+    </div>`).join('');
+}
+
+function toggleMonthPicker() {
+  const drop = document.getElementById('monthPickerDrop');
+  const isOpen = drop.style.display !== 'none';
+  if (!isOpen) {
+    buildMonthPickerDrop();
+    drop.style.display = 'block';
+    setTimeout(() => document.addEventListener('click', closePicker), 10);
+  } else {
+    drop.style.display = 'none';
+  }
+}
+
+function closePicker(e) {
+  const drop = document.getElementById('monthPickerDrop');
+  const btn = document.getElementById('monthDisplay');
+  if (!drop.contains(e.target) && !btn.contains(e.target)) {
+    drop.style.display = 'none';
+    document.removeEventListener('click', closePicker);
+  }
+}
+
+function selectCurrentMonth(k) {
+  currentMonth = k;
+  document.getElementById('monthPickerDrop').style.display = 'none';
+  document.removeEventListener('click', closePicker);
+  renderDashboard();
+}
+
+
+document.getElementById('themeToggle').onclick = () => {
+  isLight = !isLight;
+  document.body.classList.toggle('light', isLight);
+  document.getElementById('themeToggle').textContent = isLight ? '☀️' : '🌙';
+  renderAllCharts();
+};
+
+// ===== NAV =====
+function navTo(page, el) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  el.classList.add('active');
+  renderPage(page);
+}
+
+function renderPage(page) {
+  if (page === 'dashboard') renderDashboard();
+  if (page === 'finance') renderFinance();
+  if (page === 'doctors') renderDoctors();
+  if (page === 'add') renderAdd();
+  if (page === 'compare') renderCompare();
+}
+
+// ===== DASHBOARD =====
+function renderDashboard() {
+  const mk = currentMonth;
+  const pk = prevMonthKey(mk);
+  const rev = revenueByMonth(mk);
+  const exp = expenseByMonth(mk);
+  const profit = rev - exp;
+  const pRev = revenueByMonth(pk);
+  const pExp = expenseByMonth(pk);
+  const pProfit = pRev - pExp;
+
+  document.getElementById('heroProfit').textContent = fmt(profit);
+  document.getElementById('heroProfitCompare').textContent = pProfit !== 0
+    ? 'เทียบเดือนก่อน ' + pctStr(profit, pProfit) + (profit >= pProfit ? ' ▲' : ' ▼')
+    : 'ยังไม่มีข้อมูลเดือนก่อน';
+
+  document.getElementById('dashRevenue').textContent = fmt(rev);
+  document.getElementById('dashRevenueComp').innerHTML = '<span class="' + (rev >= pRev ? 'up' : 'down') + '">' + pctStr(rev, pRev) + '</span>';
+
+  document.getElementById('dashExpense').textContent = fmt(exp);
+  document.getElementById('dashExpenseComp').innerHTML = '<span class="' + (exp <= pExp ? 'up' : 'down') + '">' + pctStr(exp, pExp) + '</span>';
+
+  // avg/day
+  const days = new Set(DB.revenues.filter(r => getMonthKey(r.date) === mk).map(r => r.date)).size || 1;
+  document.getElementById('dashAvgDay').textContent = days > 0 ? fmt(rev / days) : '฿0';
+  document.getElementById('dashWorkDays').textContent = days + ' วันทำงาน';
+
+  // top doctor
+  const docRevs = {};
+  DB.revenues.filter(r => getMonthKey(r.date) === mk).forEach(r => {
+    docRevs[r.doctorId] = (docRevs[r.doctorId] || 0) + r.amount;
+  });
+  const topId = Object.keys(docRevs).sort((a,b) => docRevs[b] - docRevs[a])[0];
+  const topDoc = DB.doctors.find(d => d.id === topId);
+  document.getElementById('dashTopDoctor').textContent = topDoc ? topDoc.name.split(' ')[0].replace('ทพ.','').replace('ทพญ.','') : '—';
+  document.getElementById('dashTopDoctorVal').textContent = topDoc ? fmt(docRevs[topId]) : '—';
+
+  // month display
+  document.getElementById('monthDisplayText').textContent = monthLabel(mk);
+
+  // insights
+  renderInsights(mk, pk, rev, exp, profit, pRev, pExp, pProfit);
+
+  // main chart
+  renderMainChart(mainChartType);
+
+  // recent tx
+  renderRecentTx();
+}
+
+function renderInsights(mk, pk, rev, exp, profit, pRev, pExp, pProfit) {
+  const chips = [];
+  if (pProfit) {
+    const dp = pct(profit, pProfit);
+    chips.push(dp >= 0
+      ? '📈 กำไรเพิ่ม ' + dp.toFixed(0) + '% จากเดือนก่อน'
+      : '📉 กำไรลด ' + Math.abs(dp).toFixed(0) + '% จากเดือนก่อน');
+  }
+  // find biggest expense category
+  const cats = {};
+  DB.expenses.filter(e => getMonthKey(e.date) === mk).forEach(e => {
+    cats[e.category] = (cats[e.category] || 0) + e.amount;
+  });
+  const topCat = Object.keys(cats).sort((a,b) => cats[b]-cats[a])[0];
+  if (topCat) chips.push('💸 ' + getCatLabel(topCat) + ' สูงสุด ' + fmtShort(cats[topCat]));
+
+  // doctor with most revenue
+  const docRev = {};
+  DB.revenues.filter(r => getMonthKey(r.date) === mk).forEach(r => {
+    docRev[r.doctorId] = (docRev[r.doctorId] || 0) + r.amount;
+  });
+  const topDocId = Object.keys(docRev).sort((a,b) => docRev[b]-docRev[a])[0];
+  if (topDocId) {
+    const dn = DB.doctors.find(d => d.id === topDocId)?.name || '';
+    if (dn) chips.push('🏆 ' + dn + ' ทำรายได้สูงสุด ' + fmtShort(docRev[topDocId]));
+  }
+
+  if (!chips.length) chips.push('➕ เริ่มบันทึกข้อมูลเพื่อดู insights');
+
+  const strip = document.getElementById('insightStrip');
+  strip.innerHTML = chips.map(c => `<div class="insight-chip">✦ ${c}</div>`).join('');
+}
+
+function renderMainChart(type) {
+  mainChartType = type;
+  document.querySelectorAll('#chartTabs .tab').forEach(t => {
+    t.classList.toggle('active', t.dataset.chart === type);
+  });
+  const keys = last12MonthKeys();
+  const labels = keys.map(k => monthLabel(k));
+  let data, color;
+  if (type === 'revenue') { data = keys.map(k => revenueByMonth(k)); color = '#d4af6a'; }
+  else if (type === 'expense') { data = keys.map(k => expenseByMonth(k)); color = '#ff7a85'; }
+  else { data = keys.map(k => profitByMonth(k)); color = '#5fe0c0'; }
+
+  const ctx = document.getElementById('mainChart').getContext('2d');
+  if (mainChartInst) mainChartInst.destroy();
+
+  const gradient = ctx.createLinearGradient(0, 0, 0, 180);
+  gradient.addColorStop(0, color + '44');
+  gradient.addColorStop(1, color + '00');
+
+  mainChartInst = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        data,
+        borderColor: color,
+        backgroundColor: gradient,
+        borderWidth: 2.5,
+        pointBackgroundColor: color,
+        pointRadius: 3,
+        tension: 0.4,
+        fill: true
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: {
+        callbacks: { label: ctx => fmt(ctx.parsed.y) }
+      }},
+      scales: {
+        x: { grid: { display: false }, ticks: { color: '#8b8f9e', font: { size: 10 } } },
+        y: { grid: { color: 'rgba(212,175,106,0.06)' }, ticks: { color: '#8b8f9e', font: { size: 10 }, callback: v => fmtShort(v) } }
+      }
+    }
+  });
+}
+
+document.getElementById('chartTabs').onclick = (e) => {
+  const t = e.target.closest('.tab');
+  if (t) renderMainChart(t.dataset.chart);
+};
+
+function renderRecentTx() {
+  const allTx = [
+    ...DB.revenues.map(r => ({...r, txType:'income'})),
+    ...DB.expenses.map(e => ({...e, txType:'expense'}))
+  ].sort((a,b) => new Date(b.date) - new Date(a.date)).slice(0, 5);
+
+  const el = document.getElementById('recentTxList');
+  if (!allTx.length) {
+    el.innerHTML = '<div class="empty"><div class="empty-icon">📋</div><div class="empty-text">ยังไม่มีรายการ</div></div>';
+    return;
+  }
+  el.innerHTML = allTx.map(tx => {
+    const isIncome = tx.txType === 'income';
+    const icon = isIncome ? '💚' : '🔴';
+    const docName = DB.doctors.find(d=>d.id===tx.doctorId)?.name || '';
+    const name = isIncome ? (docName || 'รายรับ') : getCatLabel(tx.category);
+    const meta = isIncome ? '' : (tx.note || '');
+    return `<div class="tx-item">
+      <div class="tx-icon" style="background:${isIncome?'rgba(95,224,192,0.12)':'rgba(255,122,133,0.12)'}">${icon}</div>
+      <div class="tx-info">
+        <div class="tx-name">${name}</div>
+        <div class="tx-meta">${tx.date}${meta?' · '+meta:''}</div>
+      </div>
+      <div class="tx-amount ${isIncome?'income':'expense'}">${isIncome?'+':'-'}${fmt(tx.amount)}</div>
+    </div>`;
+  }).join('');
+}
+
+// ===== FINANCE PAGE =====
+function buildMonthSelector(elId, selected, onChange) {
+  const keys = last12MonthKeys();
+  const el = document.getElementById(elId);
+  el.innerHTML = keys.map(k => `<div class="month-chip ${k===selected?'active':''}" onclick="${onChange}('${k}')">${monthLabel(k)}</div>`).join('');
+}
+
+function setFinanceMonth(k) {
+  financeMonth = k;
+  renderFinance();
+}
+
+function renderFinance() {
+  buildMonthSelector('financeMonthSel', financeMonth, 'setFinanceMonth');
+  if (financeSeg === 'income') renderFinanceIncome();
+  else if (financeSeg === 'sso') renderFinanceSso();
+  else renderFinanceExpense();
+}
+
+function setFinanceSeg(seg) {
+  financeSeg = seg;
+  document.getElementById('seg-income').classList.toggle('active', seg === 'income');
+  document.getElementById('seg-sso').classList.toggle('active', seg === 'sso');
+  document.getElementById('seg-expense').classList.toggle('active', seg === 'expense');
+  document.getElementById('financeIncome').style.display = seg === 'income' ? '' : 'none';
+  document.getElementById('financeSso').style.display = seg === 'sso' ? '' : 'none';
+  document.getElementById('financeExpense').style.display = seg === 'expense' ? '' : 'none';
+  renderFinance();
+}
+
+function ssoByMonth(key) {
+  return DB.socialSecurity.filter(s => getMonthKey(s.date) === key).reduce((sum, s) => sum + s.amount, 0);
+}
+
+function renderFinanceSso() {
+  const mk = financeMonth;
+  const pk = prevMonthKey(mk);
+  const tot = ssoByMonth(mk);
+  const pTot = ssoByMonth(pk);
+  document.getElementById('finSsoTot').textContent = fmt(tot);
+  document.getElementById('finSsoComp').innerHTML = pTot
+    ? `<span class="${tot>=pTot?'up':'down'}">${pctStr(tot, pTot)} จากเดือนก่อน</span>`
+    : '<span class="neutral">ไม่มีข้อมูลเดือนก่อน</span>';
+
+  const items = DB.socialSecurity.filter(s => getMonthKey(s.date) === mk).sort((a,b) => new Date(b.date)-new Date(a.date));
+  document.getElementById('ssoList').innerHTML = items.length ? items.map(s => `
+    <div class="tx-item">
+      <div class="tx-icon" style="background:rgba(95,224,192,0.12)">🏥</div>
+      <div class="tx-info">
+        <div class="tx-name">ประกันสังคม</div>
+        <div class="tx-meta">${s.date}${s.note?' · '+s.note:''}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div class="tx-amount income">+${fmt(s.amount)}</div>
+        <div onclick="deleteSso('${s.id}')" style="color:var(--accent3);font-size:14px;cursor:pointer;padding:4px;">🗑</div>
+      </div>
+    </div>`).join('') : '<div class="empty"><div class="empty-icon">🏥</div><div class="empty-text">ยังไม่มีรายการประกันสังคม</div></div>';
+}
+
+function deleteSso(id) {
+  DB.socialSecurity = DB.socialSecurity.filter(s => s.id !== id);
+  saveDB();
+  renderFinanceSso();
+  showToast('🗑 ลบรายการแล้ว');
+}
+
+function renderFinanceIncome() {
+  const mk = financeMonth;
+  const pk = prevMonthKey(mk);
+  const rev = revenueByMonth(mk);
+  const pRev = revenueByMonth(pk);
+  document.getElementById('finIncomeTot').textContent = fmt(rev);
+  document.getElementById('finIncomeComp').innerHTML = pRev
+    ? `<span class="${rev>=pRev?'up':'down'}">${pctStr(rev, pRev)} จากเดือนก่อน</span>`
+    : '<span class="neutral">ไม่มีข้อมูลเดือนก่อน</span>';
+
+  // pie by doctor
+  const byDoc = {};
+  DB.revenues.filter(r => getMonthKey(r.date) === mk).forEach(r => { byDoc[r.doctorId] = (byDoc[r.doctorId]||0) + r.amount; });
+  const docKeys = Object.keys(byDoc).filter(k => byDoc[k] > 0).sort((a,b) => byDoc[b]-byDoc[a]);
+  const docColors = docKeys.map(id => DB.doctors.find(d => d.id === id)?.color || '#d4af6a');
+  const docName = (id) => DB.doctors.find(d => d.id === id)?.name || 'ไม่ระบุ';
+
+  const ctx1 = document.getElementById('incomeBreakChart').getContext('2d');
+  if (incomeBreakInst) incomeBreakInst.destroy();
+  if (docKeys.length) {
+    incomeBreakInst = new Chart(ctx1, {
+      type: 'doughnut',
+      data: {
+        labels: docKeys.map(k => docName(k)),
+        datasets: [{ data: docKeys.map(k => byDoc[k]), backgroundColor: docColors, borderWidth: 0 }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => fmt(c.parsed) } } },
+        cutout: '65%'
+      }
+    });
+  }
+
+  document.getElementById('incomeLegend').innerHTML = docKeys.map((k,i) =>
+    `<div class="legend-item"><div class="legend-dot" style="background:${docColors[i]}"></div>${docName(k)}: ${fmt(byDoc[k])}</div>`
+  ).join('');
+
+  // doctor list with compare
+  const pkByDoc = {};
+  DB.revenues.filter(r => getMonthKey(r.date) === pk).forEach(r => { pkByDoc[r.doctorId] = (pkByDoc[r.doctorId]||0) + r.amount; });
+  document.getElementById('incomeTypeList').innerHTML = docKeys.map((k,i) => `
+    <div class="compare-row">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <div style="width:8px;height:8px;border-radius:50%;background:${docColors[i]};flex-shrink:0;"></div>
+        <div class="compare-label">${docName(k)}</div>
+      </div>
+      <div class="compare-vals">
+        <div class="compare-val">${fmt(byDoc[k])}</div>
+        ${pkByDoc[k] ? `<span class="compare-badge ${byDoc[k]>=pkByDoc[k]?'badge-up':'badge-down'}">${pctStr(byDoc[k],pkByDoc[k])}</span>` : ''}
+      </div>
+    </div>`).join('') || '<div class="empty"><div class="empty-icon">💰</div><div class="empty-text">ยังไม่มีรายรับ</div></div>';
+}
+
+function renderFinanceExpense() {
+  const mk = financeMonth;
+  const pk = prevMonthKey(mk);
+  const exp = expenseByMonth(mk);
+  const pExp = expenseByMonth(pk);
+  document.getElementById('finExpenseTot').textContent = fmt(exp);
+  document.getElementById('finExpenseComp').innerHTML = pExp
+    ? `<span class="${exp<=pExp?'up':'down'}">${pctStr(exp, pExp)} จากเดือนก่อน</span>`
+    : '<span class="neutral">ไม่มีข้อมูลเดือนก่อน</span>';
+
+  const cats = {};
+  DB.expenses.filter(e => getMonthKey(e.date) === mk).forEach(e => { cats[e.category] = (cats[e.category]||0) + e.amount; });
+  const catKeys = Object.keys(cats).sort((a,b) => cats[b]-cats[a]);
+  const palette = ['#ff7a85','#8b7cf0','#d4af6a','#5fe0c0','#6cc5e0','#e8956b','#e07ab0','#b8c96a','#f0a0a8','#9b8ff0','#6ee0bc','#e0b86a'];
+
+  const ctx2 = document.getElementById('expenseBreakChart').getContext('2d');
+  if (expenseBreakInst) expenseBreakInst.destroy();
+  if (catKeys.length) {
+    expenseBreakInst = new Chart(ctx2, {
+      type: 'doughnut',
+      data: {
+        labels: catKeys.map(k => getCatLabel(k)),
+        datasets: [{ data: catKeys.map(k => cats[k]), backgroundColor: palette, borderWidth: 0 }]
+      },
+      options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{display:false}, tooltip:{callbacks:{label:c=>fmt(c.parsed)}} }, cutout:'65%' }
+    });
+  }
+
+  document.getElementById('expenseLegend').innerHTML = catKeys.map((k,i) =>
+    `<div class="legend-item"><div class="legend-dot" style="background:${palette[i]}"></div>${getCatLabel(k)}: ${fmt(cats[k])}</div>`
+  ).join('');
+
+  const pkCats = {};
+  DB.expenses.filter(e => getMonthKey(e.date) === pk).forEach(e => { pkCats[e.category] = (pkCats[e.category]||0) + e.amount; });
+  document.getElementById('expenseCatList').innerHTML = catKeys.map((k,i) => `
+    <div class="compare-row">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <div style="width:8px;height:8px;border-radius:50%;background:${palette[i]};flex-shrink:0;"></div>
+        <div class="compare-label">${getCatEmoji(k)} ${getCatLabel(k)}</div>
+      </div>
+      <div class="compare-vals">
+        <div class="compare-val">${fmt(cats[k])}</div>
+        ${pkCats[k] ? `<span class="compare-badge ${cats[k]<=pkCats[k]?'badge-up':'badge-down'}">${pctStr(cats[k],pkCats[k])}</span>` : ''}
+      </div>
+    </div>`).join('') || '<div class="empty"><div class="empty-icon">✅</div><div class="empty-text">ยังไม่มีรายจ่าย</div></div>';
+
+  // Lab by doctor breakdown
+  const labCard = document.getElementById('labByDoctorCard');
+  const labByDoc = {};
+  let labTotal = 0;
+  DB.expenses.filter(e => e.category === 'lab' && getMonthKey(e.date) === mk).forEach(e => {
+    const key = e.doctorId || '_none';
+    labByDoc[key] = (labByDoc[key] || 0) + e.amount;
+    labTotal += e.amount;
+  });
+  const labKeys = Object.keys(labByDoc).sort((a,b) => labByDoc[b]-labByDoc[a]);
+  if (labKeys.length) {
+    labCard.style.display = '';
+    document.getElementById('labByDoctorList').innerHTML = labKeys.map(k => {
+      const name = k === '_none' ? 'ไม่ระบุหมอ' : (DB.doctors.find(d => d.id === k)?.name || 'หมอที่ถูกลบ');
+      const color = k === '_none' ? 'var(--muted)' : (DB.doctors.find(d => d.id === k)?.color || '#ff7a85');
+      const share = labTotal ? (labByDoc[k]/labTotal*100).toFixed(0) : 0;
+      return `<div class="compare-row">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div style="width:8px;height:8px;border-radius:50%;background:${color};flex-shrink:0;"></div>
+          <div class="compare-label">${name}</div>
+        </div>
+        <div class="compare-vals">
+          <div class="compare-val">${share}%</div>
+          <div style="font-size:14px;font-weight:700;">${fmt(labByDoc[k])}</div>
+        </div>
+      </div>`;
+    }).join('');
+  } else {
+    labCard.style.display = 'none';
+  }
+}
+const avatarColors = ['#4fffb0','#7c6aff','#ffd166','#ff6b6b','#06b6d4','#f97316','#ec4899'];
+let doctorSort = 'custom';   // 'custom' | 'revenue' | 'growth' | 'name'
+let reorderMode = false;
+let dragSrcIdx = null;
+
+function setDoctorMonth(k) { doctorMonth = k; renderDoctors(); }
+
+function setDoctorSort(s) {
+  doctorSort = s;
+  ['custom','revenue','growth','name'].forEach(id => {
+    document.getElementById('sort-' + id)?.classList.toggle('active', id === s);
+  });
+  // hide reorder btn if not custom
+  const btn = document.getElementById('reorderToggleBtn');
+  if (s !== 'custom') {
+    reorderMode = false;
+    document.getElementById('reorderHint').style.display = 'none';
+    btn.style.opacity = '0.4';
+    btn.style.pointerEvents = 'none';
+  } else {
+    btn.style.opacity = '1';
+    btn.style.pointerEvents = '';
+  }
+  renderDoctors();
+}
+
+function toggleReorderMode() {
+  reorderMode = !reorderMode;
+  const btn = document.getElementById('reorderToggleBtn');
+  const hint = document.getElementById('reorderHint');
+  btn.textContent = reorderMode ? '✅ เสร็จ' : '⠿ จัดลำดับ';
+  btn.style.color = reorderMode ? 'var(--accent)' : 'var(--muted)';
+  btn.style.borderColor = reorderMode ? 'var(--accent)' : 'var(--border)';
+  hint.style.display = reorderMode ? '' : 'none';
+  renderDoctors();
+}
+
+function getSortedDoctors(mk, pk) {
+  const docs = [...DB.doctors];
+  if (doctorSort === 'revenue') {
+    docs.sort((a, b) => {
+      const ra = DB.revenues.filter(r => r.doctorId===a.id && getMonthKey(r.date)===mk).reduce((s,r)=>s+r.amount,0);
+      const rb = DB.revenues.filter(r => r.doctorId===b.id && getMonthKey(r.date)===mk).reduce((s,r)=>s+r.amount,0);
+      return rb - ra;
+    });
+  } else if (doctorSort === 'growth') {
+    docs.sort((a, b) => {
+      const ra = DB.revenues.filter(r => r.doctorId===a.id && getMonthKey(r.date)===mk).reduce((s,r)=>s+r.amount,0);
+      const pa = DB.revenues.filter(r => r.doctorId===a.id && getMonthKey(r.date)===pk).reduce((s,r)=>s+r.amount,0);
+      const rb = DB.revenues.filter(r => r.doctorId===b.id && getMonthKey(r.date)===mk).reduce((s,r)=>s+r.amount,0);
+      const pb = DB.revenues.filter(r => r.doctorId===b.id && getMonthKey(r.date)===pk).reduce((s,r)=>s+r.amount,0);
+      const ga = pa ? (ra-pa)/pa : 0;
+      const gb = pb ? (rb-pb)/pb : 0;
+      return gb - ga;
+    });
+  } else if (doctorSort === 'name') {
+    docs.sort((a, b) => a.name.localeCompare(b.name, 'th'));
+  }
+  // 'custom' keeps DB order
+  return docs;
+}
+
+function renderDoctors() {
+  buildMonthSelector('doctorMonthSel', doctorMonth, 'setDoctorMonth');
+  const mk = doctorMonth;
+  const pk = prevMonthKey(mk);
+  const el = document.getElementById('doctorList');
+  if (!DB.doctors.length) {
+    el.innerHTML = '<div class="empty"><div class="empty-icon">👨‍⚕️</div><div class="empty-text">ยังไม่มีหมอ กรุณาเพิ่มหมอ</div></div>';
+    return;
+  }
+
+  const sorted = getSortedDoctors(mk, pk);
+
+  el.innerHTML = sorted.map((doc, i) => {
+    const rev = DB.revenues.filter(r => r.doctorId === doc.id && getMonthKey(r.date) === mk).reduce((s,r) => s+r.amount, 0);
+    const comm = rev * doc.commission / 100;
+    const pRev = DB.revenues.filter(r => r.doctorId === doc.id && getMonthKey(r.date) === pk).reduce((s,r) => s+r.amount, 0);
+    const lab = DB.expenses.filter(e => e.category === 'lab' && e.doctorId === doc.id && getMonthKey(e.date) === mk).reduce((s,e) => s+e.amount, 0);
+    const initials = doc.name.replace(/ทพ\.|ทพญ\.|นพ\./g,'').trim().slice(0,2);
+    const colorIdx = DB.doctors.indexOf(doc);
+    const rankBadge = doctorSort === 'revenue'
+      ? `<div style="width:30px;height:30px;border-radius:10px;background:${i===0?'linear-gradient(135deg,#f0d49a,#d4af6a)':i===1?'linear-gradient(135deg,#d8dae0,#a8acb8)':i===2?'linear-gradient(135deg,#d9a06a,#b87844)':'var(--surface2)'};display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:${i<3?'#2a210f':'var(--muted)'};flex-shrink:0;box-shadow:${i<3?'0 3px 10px rgba(0,0,0,0.3)':'none'};">${i+1}</div>`
+      : '';
+
+    return `<div class="doctor-card" 
+        data-docid="${doc.id}"
+        draggable="${reorderMode}"
+        ondragstart="onDragStart(event,${i})"
+        ondragover="onDragOver(event)"
+        ondrop="onDrop(event,${i})"
+        ondragend="onDragEnd(event)"
+        ontouchstart="onTouchStart(event,${i})"
+        ontouchmove="onTouchMove(event)"
+        ontouchend="onTouchEnd(event,${i})"
+        style="transition:opacity 0.2s,transform 0.15s;${reorderMode?'cursor:grab;border:1.5px dashed var(--border);':''}"
+      >
+      <div class="doctor-header">
+        ${reorderMode ? `<div style="color:var(--muted);font-size:22px;padding-right:4px;cursor:grab;touch-action:none;">⠿</div>` : rankBadge}
+        <div class="doctor-avatar" style="background:${doc.color||avatarColors[colorIdx%7]}">${initials}</div>
+        <div style="flex:1;">
+          <div class="doctor-name">${doc.name}</div>
+        </div>
+        <div style="text-align:right;">
+          ${!reorderMode && pRev ? `<span class="compare-badge ${rev>=pRev?'badge-up':'badge-down'}">${pctStr(rev,pRev)}</span>` : ''}
+        </div>
+      </div>
+      ${!reorderMode ? `<div class="doctor-stats">
+        <div class="d-stat">
+          <div class="d-stat-val" style="color:var(--accent)">${fmtShort(rev)}</div>
+          <div class="d-stat-label">รายได้</div>
+        </div>
+        <div class="d-stat">
+          <div class="d-stat-val" style="color:var(--accent3)">${fmtShort(lab)}</div>
+          <div class="d-stat-label">ค่า Lab</div>
+        </div>
+        <div class="d-stat">
+          <div class="d-stat-val" style="color:var(--accent2)">${pRev?pctStr(rev,pRev):'—'}</div>
+          <div class="d-stat-label">vs ก่อน</div>
+        </div>
+      </div>` : `<div style="font-size:13px;color:var(--muted);padding:4px 0 2px;">กดค้างแล้วลากเพื่อย้ายตำแหน่ง</div>`}
+    </div>`;
+  }).join('');
+}
+
+// ===== DRAG & DROP (desktop) =====
+function onDragStart(e, idx) {
+  if (!reorderMode) return;
+  dragSrcIdx = idx;
+  e.dataTransfer.effectAllowed = 'move';
+  setTimeout(() => e.target.style.opacity = '0.4', 0);
+}
+
+function onDragOver(e) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  // highlight target
+  document.querySelectorAll('.doctor-card').forEach(c => c.style.transform = '');
+  e.currentTarget.style.transform = 'scale(1.02)';
+}
+
+function onDrop(e, dropIdx) {
+  e.preventDefault();
+  if (dragSrcIdx === null || dragSrcIdx === dropIdx) return;
+  const sorted = getSortedDoctors(doctorMonth, prevMonthKey(doctorMonth));
+  const moved = sorted[dragSrcIdx];
+  sorted.splice(dragSrcIdx, 1);
+  sorted.splice(dropIdx, 0, moved);
+  DB.doctors = sorted;
+  saveDB();
+  dragSrcIdx = null;
+  renderDoctors();
+}
+
+function onDragEnd(e) {
+  document.querySelectorAll('.doctor-card').forEach(c => {
+    c.style.opacity = '1';
+    c.style.transform = '';
+  });
+  dragSrcIdx = null;
+}
+
+// ===== TOUCH DRAG (mobile) =====
+let touchSrcIdx = null;
+let touchClone = null;
+let touchStartY = 0;
+
+function onTouchStart(e, idx) {
+  if (!reorderMode) return;
+  touchSrcIdx = idx;
+  touchStartY = e.touches[0].clientY;
+  const card = e.currentTarget;
+  card.style.opacity = '0.5';
+  // create floating clone
+  touchClone = card.cloneNode(true);
+  touchClone.style.cssText = `position:fixed;z-index:999;left:${card.getBoundingClientRect().left}px;top:${card.getBoundingClientRect().top}px;width:${card.offsetWidth}px;opacity:0.9;pointer-events:none;box-shadow:0 16px 40px rgba(0,0,0,0.5);border-radius:20px;transition:none;`;
+  document.body.appendChild(touchClone);
+}
+
+function onTouchMove(e) {
+  if (touchSrcIdx === null || !touchClone) return;
+  e.preventDefault();
+  const touch = e.touches[0];
+  const dy = touch.clientY - touchStartY;
+  touchClone.style.top = (parseFloat(touchClone.style.top) + dy) + 'px';
+  touchStartY = touch.clientY;
+
+  // find card under finger
+  touchClone.style.display = 'none';
+  const el = document.elementFromPoint(touch.clientX, touch.clientY);
+  touchClone.style.display = '';
+  const card = el?.closest('.doctor-card');
+  document.querySelectorAll('.doctor-card').forEach(c => c.style.transform = '');
+  if (card && card !== document.querySelectorAll('.doctor-card')[touchSrcIdx]) {
+    card.style.transform = 'scale(1.02)';
+  }
+}
+
+function onTouchEnd(e, idx) {
+  if (touchSrcIdx === null) return;
+  if (touchClone) { touchClone.remove(); touchClone = null; }
+  document.querySelectorAll('.doctor-card').forEach(c => { c.style.opacity='1'; c.style.transform=''; });
+
+  const touch = e.changedTouches[0];
+  const el = document.elementFromPoint(touch.clientX, touch.clientY);
+  const targetCard = el?.closest('.doctor-card');
+  if (targetCard) {
+    const cards = [...document.querySelectorAll('.doctor-card')];
+    const dropIdx = cards.indexOf(targetCard);
+    if (dropIdx !== -1 && dropIdx !== touchSrcIdx) {
+      const sorted = getSortedDoctors(doctorMonth, prevMonthKey(doctorMonth));
+      const moved = sorted[touchSrcIdx];
+      sorted.splice(touchSrcIdx, 1);
+      sorted.splice(dropIdx, 0, moved);
+      DB.doctors = sorted;
+      saveDB();
+    }
+  }
+  touchSrcIdx = null;
+  renderDoctors();
+}
+
+function saveDoctor() {
+  const name = document.getElementById('newDoctorName').value.trim();
+  const color = document.getElementById('newDoctorColor').value;
+  if (!name) { showToast('กรุณากรอกชื่อหมอ'); return; }
+  DB.doctors.push({ id: 'd' + Date.now(), name, commission: 0, color });
+  saveDB();
+  document.getElementById('addDoctorModal').classList.remove('open');
+  document.getElementById('newDoctorName').value = '';
+  renderDoctors();
+  populateDoctorSelect();
+  showToast('✅ เพิ่มหมอสำเร็จ');
+}
+
+// ===== ADD DATA =====
+function renderAdd() {
+  const today = new Date().toISOString().split('T')[0];
+  if (!document.getElementById('revDate').value) document.getElementById('revDate').value = today;
+  if (!document.getElementById('expDate').value) document.getElementById('expDate').value = today;
+  if (!document.getElementById('ssoDate').value) document.getElementById('ssoDate').value = today;
+  populateDoctorSelect();
+  populateExpDoctorSelect();
+}
+
+function populateDoctorSelect() {
+  const sel = document.getElementById('revDoctor');
+  sel.innerHTML = DB.doctors.map(d => `<option value="${d.id}">${d.name}</option>`).join('');
+}
+
+function populateExpDoctorSelect() {
+  const sel = document.getElementById('expDoctor');
+  if (!sel) return;
+  sel.innerHTML = DB.doctors.length
+    ? DB.doctors.map(d => `<option value="${d.id}">${d.name}</option>`).join('')
+    : '<option value="">— ยังไม่มีหมอในระบบ —</option>';
+}
+
+function setAddSeg(seg) {
+  addSeg = seg;
+  document.getElementById('seg-addrev').classList.toggle('active', seg === 'revenue');
+  document.getElementById('seg-addsso').classList.toggle('active', seg === 'sso');
+  document.getElementById('seg-addexp').classList.toggle('active', seg === 'expense');
+  document.getElementById('addRevenue').style.display = seg === 'revenue' ? '' : 'none';
+  document.getElementById('addSso').style.display = seg === 'sso' ? '' : 'none';
+  document.getElementById('addExpense').style.display = seg === 'expense' ? '' : 'none';
+}
+
+function saveSso() {
+  const date = document.getElementById('ssoDate').value;
+  const amount = parseFloat(document.getElementById('ssoAmount').value);
+  const note = document.getElementById('ssoNote').value;
+  if (!date || !amount) { showToast('กรุณากรอกข้อมูลให้ครบ'); return; }
+  DB.socialSecurity.push({ id: 's'+Date.now(), date, amount, note });
+  saveDB();
+  document.getElementById('ssoAmount').value = '';
+  document.getElementById('ssoNote').value = '';
+  showToast('✅ บันทึกประกันสังคมสำเร็จ');
+}
+
+function saveRevenue() {
+  const date = document.getElementById('revDate').value;
+  const doctorId = document.getElementById('revDoctor').value;
+  const amount = parseFloat(document.getElementById('revAmount').value);
+  const note = document.getElementById('revNote').value;
+  if (!date || !amount || !doctorId) { showToast('กรุณากรอกข้อมูลให้ครบ'); return; }
+  DB.revenues.push({ id: 'r'+Date.now(), date, doctorId, amount, note });
+  saveDB();
+  document.getElementById('revAmount').value = '';
+  document.getElementById('revNote').value = '';
+  showToast('✅ บันทึกรายรับสำเร็จ');
+  currentMonth = getMonthKey(date);
+}
+
+function saveExpense() {
+  const date = document.getElementById('expDate').value;
+  const category = document.getElementById('expCategory').value;
+  const amount = parseFloat(document.getElementById('expAmount').value);
+  const note = document.getElementById('expNote').value;
+  if (!date || !amount) { showToast('กรุณากรอกข้อมูลให้ครบ'); return; }
+  const entry = { id: 'e'+Date.now(), date, category, amount, note };
+  // link doctor for Lab expenses
+  if (category === 'lab') {
+    const docId = document.getElementById('expDoctor').value;
+    if (docId) entry.doctorId = docId;
+  }
+  DB.expenses.push(entry);
+  saveDB();
+  document.getElementById('expAmount').value = '';
+  document.getElementById('expNote').value = '';
+  showToast('✅ บันทึกรายจ่ายสำเร็จ');
+}
+
+// ===== COMPARE =====
+function setCmpTab(n) {
+  cmpTab = n;
+  document.getElementById('cmpTab1').classList.toggle('active', n===1);
+  document.getElementById('cmpTab2').classList.toggle('active', n===2);
+  renderCompare();
+}
+
+function renderCompare() {
+  let mk, pk;
+  if (cmpTab === 1) {
+    mk = currentMonthKey();
+    pk = prevMonthKey(mk);
+  } else {
+    const now = new Date();
+    const y = now.getFullYear(), m = String(now.getMonth()+1).padStart(2,'0');
+    mk = y + '-' + m;
+    pk = (y-1) + '-' + m;
+  }
+
+  const rev = revenueByMonth(mk), exp = expenseByMonth(mk), profit = rev - exp;
+  const pRev = revenueByMonth(pk), pExp = expenseByMonth(pk), pProfit = pRev - pExp;
+
+  const rows = [
+    { label:'💰 รายรับ', cur: rev, prev: pRev },
+    { label:'💸 รายจ่าย', cur: exp, prev: pExp },
+    { label:'📊 กำไรสุทธิ', cur: profit, prev: pProfit },
+  ];
+
+  document.getElementById('cmpTableMain').innerHTML = rows.map(r => `
+    <div class="compare-row">
+      <div class="compare-label">${r.label}</div>
+      <div class="compare-vals">
+        <div style="text-align:right;"><div class="compare-val">${fmt(r.prev)}</div><div style="font-size:10px;color:var(--muted);">${monthLabel(pk)}</div></div>
+        <div style="text-align:right;"><div style="font-size:14px;font-weight:700;">${fmt(r.cur)}</div><div style="font-size:10px;color:var(--muted);">${monthLabel(mk)}</div></div>
+        ${r.prev ? `<span class="compare-badge ${r.cur>=r.prev?'badge-up':'badge-down'}">${pctStr(r.cur,r.prev)}</span>` : ''}
+      </div>
+    </div>`).join('');
+
+  // doctor compare
+  document.getElementById('cmpDoctorTable').innerHTML = DB.doctors.map(doc => {
+    const cur = DB.revenues.filter(r => r.doctorId===doc.id && getMonthKey(r.date)===mk).reduce((s,r)=>s+r.amount,0);
+    const prev = DB.revenues.filter(r => r.doctorId===doc.id && getMonthKey(r.date)===pk).reduce((s,r)=>s+r.amount,0);
+    return `<div class="compare-row">
+      <div class="compare-label">${doc.name.split(' ')[0]}</div>
+      <div class="compare-vals">
+        <div class="compare-val">${fmt(prev)}</div>
+        <div style="font-size:14px;font-weight:700;">${fmt(cur)}</div>
+        ${prev ? `<span class="compare-badge ${cur>=prev?'badge-up':'badge-down'}">${pctStr(cur,prev)}</span>` : ''}
+      </div>
+    </div>`;
+  }).join('') || '<div style="color:var(--muted);font-size:13px;padding:12px 0;">ยังไม่มีหมอ</div>';
+
+  // auto insights
+  const insights = [];
+  if (pProfit) {
+    const dp = pct(profit, pProfit);
+    if (Math.abs(dp) > 5) {
+      if (dp < 0) {
+        const cats = {};
+        DB.expenses.filter(e => getMonthKey(e.date)===mk).forEach(e => { cats[e.category]=(cats[e.category]||0)+e.amount; });
+        const pCats = {};
+        DB.expenses.filter(e => getMonthKey(e.date)===pk).forEach(e => { pCats[e.category]=(pCats[e.category]||0)+e.amount; });
+        const topGrowCat = Object.keys(cats).sort((a,b) => (cats[b]-( pCats[b]||0)) - (cats[a]-(pCats[a]||0)))[0];
+        insights.push(`📉 กำไรลดลง ${Math.abs(dp).toFixed(1)}%${topGrowCat ? ' เพราะ' + getCatLabel(topGrowCat) + 'เพิ่มขึ้น' : ''}`);
+      } else {
+        insights.push(`📈 กำไรเพิ่มขึ้น ${dp.toFixed(1)}% จาก${monthLabel(pk)}`);
+      }
+    }
+  }
+  if (pRev) {
+    const dr = pct(rev, pRev);
+    if (dr > 10) insights.push(`🚀 รายรับเพิ่มขึ้น ${dr.toFixed(1)}% แสดงว่าคลินิกโตดี`);
+    if (dr < -10) insights.push(`⚠️ รายรับลดลง ${Math.abs(dr).toFixed(1)}% ควรตรวจสอบสาเหตุ`);
+  }
+  if (!insights.length) insights.push('➕ บันทึกข้อมูลเพิ่มเพื่อดู auto insights');
+  document.getElementById('autoInsights').innerHTML = insights.map(i =>
+    `<div style="padding:10px 0;border-bottom:1px solid var(--border);font-size:14px;font-weight:500;">${i}</div>`
+  ).join('');
+}
+
+// ===== TOAST =====
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+function renderAllCharts() {
+  renderMainChart(mainChartType);
+}
+
+// ===== GOOGLE SHEETS SYNC =====
+function getSyncUrl() { return localStorage.getItem('dentflow_syncUrl') || ''; }
+function getAutoSync() { return localStorage.getItem('dentflow_autoSync') === '1'; }
+
+function refreshSyncUI() {
+  const url = getSyncUrl();
+  const input = document.getElementById('syncUrlInput');
+  const status = document.getElementById('syncStatusText');
+  const dot = document.getElementById('syncDot');
+  if (input && !input.value) input.value = url;
+  if (url) {
+    status.textContent = 'เชื่อมต่อแล้ว';
+    dot.style.background = 'var(--accent4)';
+    dot.style.boxShadow = '0 0 8px var(--accent4)';
+  } else {
+    status.textContent = 'ยังไม่ได้เชื่อมต่อ';
+    dot.style.background = 'var(--muted)';
+    dot.style.boxShadow = 'none';
+  }
+  // auto-sync toggle
+  const on = getAutoSync();
+  const toggle = document.getElementById('autoSyncToggle');
+  const knob = document.getElementById('autoSyncKnob');
+  if (toggle) {
+    toggle.style.background = on ? 'var(--accent4)' : 'var(--surface2)';
+    knob.style.left = on ? '22px' : '2px';
+    knob.style.background = on ? '#0a0c14' : 'var(--muted)';
+  }
+}
+
+function saveSyncUrl() {
+  const url = document.getElementById('syncUrlInput').value.trim();
+  if (!url) { showToast('กรุณาวาง URL'); return; }
+  if (!url.includes('script.google.com')) { showToast('❌ URL ไม่ถูกต้อง'); return; }
+  localStorage.setItem('dentflow_syncUrl', url);
+  refreshSyncUI();
+  showToast('✅ เชื่อมต่อสำเร็จ');
+  syncNow();
+}
+
+function toggleAutoSync() {
+  const on = !getAutoSync();
+  localStorage.setItem('dentflow_autoSync', on ? '1' : '0');
+  refreshSyncUI();
+  showToast(on ? '✅ เปิดซิงค์อัตโนมัติ' : 'ปิดซิงค์อัตโนมัติ');
+}
+
+async function syncNow() {
+  const url = getSyncUrl();
+  if (!url) { showToast('ยังไม่ได้เชื่อมต่อ'); return; }
+  const btn = document.getElementById('syncNowBtn');
+  if (btn) { btn.textContent = '⏳ กำลังซิงค์...'; btn.style.pointerEvents = 'none'; }
+  try {
+    await fetch(url, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(DB)
+    });
+    // no-cors gives opaque response; assume success if no throw
+    localStorage.setItem('dentflow_lastSync', new Date().toLocaleString('th-TH'));
+    showToast('✅ ซิงค์ขึ้น Google Sheets แล้ว');
+  } catch (err) {
+    showToast('❌ ซิงค์ไม่สำเร็จ ลองใหม่');
+  } finally {
+    if (btn) { btn.textContent = '⬆️ ซิงค์เลย'; btn.style.pointerEvents = ''; }
+  }
+}
+
+// auto-sync hook — called after every saveDB
+let _syncTimer = null;
+function autoSyncDebounced() {
+  if (!getAutoSync() || !getSyncUrl()) return;
+  clearTimeout(_syncTimer);
+  _syncTimer = setTimeout(() => { syncNow(); }, 2500);
+}
+
+function openSheetGuide() { document.getElementById('sheetGuideModal').style.display = 'flex'; }
+function closeSheetGuide() { document.getElementById('sheetGuideModal').style.display = 'none'; }
+function copyAppsScript() {
+  const code = document.getElementById('appsScriptCode').textContent;
+  navigator.clipboard.writeText(code).then(
+    () => showToast('✅ คัดลอกโค้ดแล้ว'),
+    () => showToast('คัดลอกไม่สำเร็จ ลองเลือกเอง')
+  );
+}
+
+// ===== BACKUP & RESTORE =====
+function openBackupModal() {
+  updateBackupSummary();
+  refreshSyncUI();
+  document.getElementById('backupModal').style.display = 'flex';
+}
+
+function closeBackupModal() {
+  document.getElementById('backupModal').style.display = 'none';
+}
+
+function updateBackupSummary() {
+  const rev = DB.revenues.length;
+  const exp = DB.expenses.length;
+  const doc = DB.doctors.length;
+  const custom = (DB.customCats || []).length;
+  const sso = (DB.socialSecurity || []).length;
+  const lastSaved = localStorage.getItem('dentflow_lastSaved') || '—';
+  document.getElementById('backupSummary').innerHTML =
+    `<div style="color:var(--muted);font-size:12px;font-weight:600;margin-bottom:6px;">ข้อมูลปัจจุบันใน localStorage</div>` +
+    `👨‍⚕️ หมอ <b>${doc}</b> คน &nbsp;|&nbsp; ` +
+    `💰 รายรับ <b>${rev}</b> รายการ<br>` +
+    `💸 รายจ่าย <b>${exp}</b> รายการ &nbsp;|&nbsp; ` +
+    `🏥 ประกันสังคม <b>${sso}</b> รายการ<br>` +
+    `🗂️ หมวดเพิ่ม <b>${custom}</b> หมวด<br>` +
+    `<span style="color:var(--muted);font-size:11px;">บันทึกล่าสุด: ${lastSaved}</span>`;
+}
+
+function exportData() {
+  const now = new Date();
+  const timestamp = now.toLocaleDateString('th-TH',{year:'numeric',month:'2-digit',day:'2-digit'}).replace(/\//g,'-');
+  const payload = JSON.stringify(DB, null, 2);
+  const blob = new Blob([payload], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `dentflow-backup-${timestamp}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('✅ ดาวน์โหลดไฟล์ข้อมูลสำเร็จ');
+}
+
+function importData(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const parsed = JSON.parse(e.target.result);
+      // validate basic structure
+      if (!Array.isArray(parsed.doctors) || !Array.isArray(parsed.revenues) || !Array.isArray(parsed.expenses)) {
+        showToast('❌ ไฟล์ไม่ถูกต้อง'); return;
+      }
+      DB = { doctors: [], revenues: [], expenses: [], customCats: [], socialSecurity: [], ...parsed };
+      saveDB();
+      updateBackupSummary();
+      renderDashboard();
+      populateDoctorSelect();
+      showToast(`✅ กู้คืนข้อมูลสำเร็จ — ${DB.revenues.length} รายรับ, ${DB.expenses.length} รายจ่าย`);
+    } catch(err) {
+      showToast('❌ ไฟล์เสียหาย ไม่สามารถโหลดได้');
+    }
+  };
+  reader.readAsText(file);
+  event.target.value = ''; // reset input
+}
+
+// ===== INIT =====
+loadDB();
+renderDashboard();
+populateDoctorSelect();
+</script>
+</body>
+</html>
