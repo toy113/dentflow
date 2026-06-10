@@ -696,29 +696,83 @@
       </div>
     </div>
 
+    <!-- PAGE 6: VEHICLE / AIR -->
+    <div class="page" id="page-vehicle">
+      <div class="month-selector" id="vehicleMonthSel"></div>
+
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;padding:12px 14px;background:rgba(124,124,240,0.08);border:1px solid rgba(124,124,240,0.2);border-radius:14px;">
+        <div style="font-size:22px;">🚗</div>
+        <div style="font-size:12px;color:var(--muted);line-height:1.5;">ค่ารถยนต์ & ล้างแอร์ <b style="color:var(--accent2);">แยกดูต่างหาก</b> ไม่รวมในรายจ่ายหลัก/กำไร</div>
+      </div>
+
+      <!-- TWO TOTALS -->
+      <div class="metric-grid">
+        <div class="metric-card">
+          <div class="glow" style="background:var(--accent2)"></div>
+          <div class="metric-label">🚗 ค่ารถยนต์</div>
+          <div class="metric-value" id="vehCarTot">฿0</div>
+          <div class="metric-sub" id="vehCarComp" style="color:var(--muted)">เดือนนี้</div>
+        </div>
+        <div class="metric-card">
+          <div class="glow" style="background:var(--accent4)"></div>
+          <div class="metric-label">❄️ ล้างแอร์</div>
+          <div class="metric-value" id="vehAirTot">฿0</div>
+          <div class="metric-sub" id="vehAirComp" style="color:var(--muted)">เดือนนี้</div>
+        </div>
+      </div>
+
+      <!-- ADD FORM -->
+      <div class="card">
+        <div class="section-title">+ บันทึกรายการ</div>
+        <div class="segment">
+          <div class="seg-btn active" id="seg-car" onclick="setVehType('car')">🚗 รถยนต์</div>
+          <div class="seg-btn" id="seg-air" onclick="setVehType('air')">❄️ ล้างแอร์</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">วันที่</label>
+          <input class="form-input" type="date" id="vehDate">
+        </div>
+        <div class="form-group">
+          <label class="form-label">ยอด (บาท)</label>
+          <input class="form-input" type="number" id="vehAmount" placeholder="0" inputmode="decimal">
+        </div>
+        <button class="btn-primary" onclick="saveVehicle()">💾 บันทึก</button>
+      </div>
+
+      <!-- LIST -->
+      <div class="card card-sm">
+        <div class="section-title">รายการเดือนนี้</div>
+        <div id="vehicleList"></div>
+      </div>
+    </div>
+
   </div><!-- /pages -->
 
   <!-- BOTTOM NAV -->
   <div class="bottom-nav">
     <div class="nav-item active" data-page="dashboard" onclick="navTo('dashboard',this)">
       <div class="nav-icon">🏠</div>
-      <div class="nav-label">Dashboard</div>
+      <div class="nav-label">หน้าหลัก</div>
     </div>
     <div class="nav-item" data-page="finance" onclick="navTo('finance',this)">
       <div class="nav-icon">💰</div>
-      <div class="nav-label">Finance</div>
-    </div>
-    <div class="nav-item" data-page="doctors" onclick="navTo('doctors',this)">
-      <div class="nav-icon">🦷</div>
-      <div class="nav-label">Doctors</div>
+      <div class="nav-label">การเงิน</div>
     </div>
     <div class="nav-item nav-add" data-page="add" onclick="navTo('add',this)">
       <div class="nav-icon">➕</div>
       <div class="nav-label">บันทึก</div>
     </div>
+    <div class="nav-item" data-page="doctors" onclick="navTo('doctors',this)">
+      <div class="nav-icon">🦷</div>
+      <div class="nav-label">หมอ</div>
+    </div>
+    <div class="nav-item" data-page="vehicle" onclick="navTo('vehicle',this)">
+      <div class="nav-icon">🚗</div>
+      <div class="nav-label">รถ/แอร์</div>
+    </div>
     <div class="nav-item" data-page="compare" onclick="navTo('compare',this)">
       <div class="nav-icon">📈</div>
-      <div class="nav-label">Compare</div>
+      <div class="nav-label">เทียบ</div>
     </div>
   </div>
 </div>
@@ -888,6 +942,7 @@
   writeTab(sheet, "รายรับ", data.revenues, ["date","doctorId","amount","note"]);
   writeTab(sheet, "รายจ่าย", data.expenses, ["date","category","amount","doctorId","note"]);
   writeTab(sheet, "ประกันสังคม", data.socialSecurity, ["date","amount","note"]);
+  writeTab(sheet, "รถ-แอร์", data.vehicle, ["date","type","amount"]);
   writeTab(sheet, "หมอ", data.doctors, ["id","name","color"]);
   return ContentService.createTextOutput(
     JSON.stringify({ok:true})).setMimeType(ContentService.MimeType.JSON);
@@ -1067,7 +1122,8 @@ let DB = {
   revenues: [],
   expenses: [],
   customCats: [],
-  socialSecurity: []
+  socialSecurity: [],
+  vehicle: []
 };
 
 function loadDB() {
@@ -1076,6 +1132,7 @@ function loadDB() {
     if (saved) DB = JSON.parse(saved);
     if (!DB.customCats) DB.customCats = [];
     if (!DB.socialSecurity) DB.socialSecurity = [];
+    if (!DB.vehicle) DB.vehicle = [];
   } catch(e) {}
 }
 
@@ -1160,6 +1217,8 @@ let addSeg = 'revenue';
 let cmpTab = 1;
 let financeMonth = currentMonthKey();
 let doctorMonth = currentMonthKey();
+let vehicleMonth = currentMonthKey();
+let vehType = 'car';
 
 // ===== MONTH PICKER =====
 function buildMonthPickerDrop() {
@@ -1224,6 +1283,7 @@ function renderPage(page) {
   if (page === 'doctors') renderDoctors();
   if (page === 'add') renderAdd();
   if (page === 'compare') renderCompare();
+  if (page === 'vehicle') renderVehicle();
 }
 
 // ===== DASHBOARD =====
@@ -1992,6 +2052,74 @@ function renderAllCharts() {
   renderMainChart(mainChartType);
 }
 
+// ===== VEHICLE / AIR =====
+function setVehicleMonth(k) { vehicleMonth = k; renderVehicle(); }
+
+function setVehType(t) {
+  vehType = t;
+  document.getElementById('seg-car').classList.toggle('active', t === 'car');
+  document.getElementById('seg-air').classList.toggle('active', t === 'air');
+}
+
+function vehicleByMonth(key, type) {
+  return DB.vehicle.filter(v => getMonthKey(v.date) === key && v.type === type).reduce((s, v) => s + v.amount, 0);
+}
+
+function renderVehicle() {
+  buildMonthSelector('vehicleMonthSel', vehicleMonth, 'setVehicleMonth');
+  const today = new Date().toISOString().split('T')[0];
+  if (!document.getElementById('vehDate').value) document.getElementById('vehDate').value = today;
+
+  const mk = vehicleMonth;
+  const pk = prevMonthKey(mk);
+  const car = vehicleByMonth(mk, 'car');
+  const air = vehicleByMonth(mk, 'air');
+  const pCar = vehicleByMonth(pk, 'car');
+  const pAir = vehicleByMonth(pk, 'air');
+
+  document.getElementById('vehCarTot').textContent = fmt(car);
+  document.getElementById('vehAirTot').textContent = fmt(air);
+  document.getElementById('vehCarComp').innerHTML = pCar
+    ? `<span class="${car<=pCar?'up':'down'}">${pctStr(car,pCar)} จากเดือนก่อน</span>` : 'เดือนนี้';
+  document.getElementById('vehAirComp').innerHTML = pAir
+    ? `<span class="${air<=pAir?'up':'down'}">${pctStr(air,pAir)} จากเดือนก่อน</span>` : 'เดือนนี้';
+
+  const items = DB.vehicle.filter(v => getMonthKey(v.date) === mk).sort((a,b) => new Date(b.date)-new Date(a.date));
+  document.getElementById('vehicleList').innerHTML = items.length ? items.map(v => {
+    const isCar = v.type === 'car';
+    return `<div class="tx-item">
+      <div class="tx-icon" style="background:${isCar?'rgba(124,124,240,0.12)':'rgba(95,224,192,0.12)'}">${isCar?'🚗':'❄️'}</div>
+      <div class="tx-info">
+        <div class="tx-name">${isCar?'ค่ารถยนต์':'ล้างแอร์'}</div>
+        <div class="tx-meta">${v.date}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div class="tx-amount expense">-${fmt(v.amount)}</div>
+        <div onclick="deleteVehicle('${v.id}')" style="color:var(--accent3);font-size:14px;cursor:pointer;padding:4px;">🗑</div>
+      </div>
+    </div>`;
+  }).join('') : '<div class="empty"><div class="empty-icon">🚗</div><div class="empty-text">ยังไม่มีรายการ</div></div>';
+}
+
+function saveVehicle() {
+  const date = document.getElementById('vehDate').value;
+  const amount = parseFloat(document.getElementById('vehAmount').value);
+  if (!date || !amount) { showToast('กรุณากรอกข้อมูลให้ครบ'); return; }
+  DB.vehicle.push({ id: 'v'+Date.now(), date, type: vehType, amount });
+  saveDB();
+  document.getElementById('vehAmount').value = '';
+  vehicleMonth = getMonthKey(date);
+  renderVehicle();
+  showToast('✅ บันทึกสำเร็จ');
+}
+
+function deleteVehicle(id) {
+  DB.vehicle = DB.vehicle.filter(v => v.id !== id);
+  saveDB();
+  renderVehicle();
+  showToast('🗑 ลบรายการแล้ว');
+}
+
 // ===== GOOGLE SHEETS SYNC =====
 function getSyncUrl() { return localStorage.getItem('dentflow_syncUrl') || ''; }
 function getAutoSync() { return localStorage.getItem('dentflow_autoSync') === '1'; }
@@ -2096,6 +2224,7 @@ function updateBackupSummary() {
   const doc = DB.doctors.length;
   const custom = (DB.customCats || []).length;
   const sso = (DB.socialSecurity || []).length;
+  const veh = (DB.vehicle || []).length;
   const lastSaved = localStorage.getItem('dentflow_lastSaved') || '—';
   document.getElementById('backupSummary').innerHTML =
     `<div style="color:var(--muted);font-size:12px;font-weight:600;margin-bottom:6px;">ข้อมูลปัจจุบันใน localStorage</div>` +
@@ -2103,6 +2232,7 @@ function updateBackupSummary() {
     `💰 รายรับ <b>${rev}</b> รายการ<br>` +
     `💸 รายจ่าย <b>${exp}</b> รายการ &nbsp;|&nbsp; ` +
     `🏥 ประกันสังคม <b>${sso}</b> รายการ<br>` +
+    `🚗 รถ/แอร์ <b>${veh}</b> รายการ &nbsp;|&nbsp; ` +
     `🗂️ หมวดเพิ่ม <b>${custom}</b> หมวด<br>` +
     `<span style="color:var(--muted);font-size:11px;">บันทึกล่าสุด: ${lastSaved}</span>`;
 }
@@ -2132,7 +2262,7 @@ function importData(event) {
       if (!Array.isArray(parsed.doctors) || !Array.isArray(parsed.revenues) || !Array.isArray(parsed.expenses)) {
         showToast('❌ ไฟล์ไม่ถูกต้อง'); return;
       }
-      DB = { doctors: [], revenues: [], expenses: [], customCats: [], socialSecurity: [], ...parsed };
+      DB = { doctors: [], revenues: [], expenses: [], customCats: [], socialSecurity: [], vehicle: [], ...parsed };
       saveDB();
       updateBackupSummary();
       renderDashboard();
